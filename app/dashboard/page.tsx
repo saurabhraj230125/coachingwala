@@ -7,14 +7,42 @@ import {
 } from "lucide-react";
 import CopyButton from "./components/CopyButton";
 
+// 🔥 THE DEEP FIX: Force Vercel to load this live, never cache it.
+export const dynamic = "force-dynamic";
+
 export default async function FullPotentialDashboard() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   
-  // Fetch telemetry
-  const { data: institute } = await supabase.from("institutes").select("*").eq("owner_id", user?.id).single();
-  const { count: studentCount } = await supabase.from("students").select("*", { count: 'exact', head: true }).eq("institute_id", institute?.id);
-  const { count: examCount } = await supabase.from("exams").select("*", { count: 'exact', head: true }).eq("institute_id", institute?.id);
+  // 1. Safely fetch the institute
+  const { data: institute } = await supabase
+    .from("institutes")
+    .select("*")
+    .eq("owner_id", user?.id)
+    .single();
+
+  // 2. CRASH-PROOF TELEMETRY FETCHING
+  // If the institute isn't loaded or the tables don't exist yet, default to 0 instead of crashing Next.js
+  let studentCount = 0;
+  let examCount = 0;
+
+  if (institute?.id) {
+    // Fetch students safely
+    const { count: sCount, error: sError } = await supabase
+      .from("students")
+      .select("*", { count: 'exact', head: true })
+      .eq("institute_id", institute.id);
+    
+    if (!sError) studentCount = sCount || 0;
+
+    // Fetch exams safely
+    const { count: eCount, error: eError } = await supabase
+      .from("exams")
+      .select("*", { count: 'exact', head: true })
+      .eq("institute_id", institute.id);
+      
+    if (!eError) examCount = eCount || 0;
+  }
 
   // Generate the dynamic student portal URL
   const portalUrl = process.env.NEXT_PUBLIC_SITE_URL 
@@ -31,7 +59,7 @@ export default async function FullPotentialDashboard() {
             Overview <Sparkles className="h-6 w-6 md:h-8 md:w-8 text-indigo-500" />
           </h1>
           <p className="text-sm text-slate-500 mt-1 font-medium">
-            Active Workspace: <span className="text-slate-800 font-bold">{institute?.name || "Loading..."}</span>
+            Active Workspace: <span className="text-slate-800 font-bold">{institute?.name || "Loading Workspace..."}</span>
           </p>
         </div>
         <div className="flex gap-2 w-full md:w-auto">
@@ -64,6 +92,7 @@ export default async function FullPotentialDashboard() {
             <code className="text-indigo-100 text-xs md:text-sm font-mono truncate mr-4 selection:bg-indigo-500/50">{portalUrl}</code>
             <ExternalLink className="h-4 w-4 text-indigo-400 shrink-0" />
           </div>
+          {/* We will handle CopyButton error next if it acts up, assuming it's safe for now */}
           <CopyButton url={portalUrl} />
         </div>
       </div>
@@ -79,7 +108,7 @@ export default async function FullPotentialDashboard() {
             <p className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest group-hover:text-blue-500 transition-colors">Enrolled</p>
           </div>
           <div className="relative z-10">
-            <p className="text-4xl font-black text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors">{studentCount || 0}</p>
+            <p className="text-4xl font-black text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors">{studentCount}</p>
             <div className="mt-4 flex items-center gap-1.5 text-xs font-bold text-slate-500 group-hover:text-blue-600 transition-colors">
               Manage Roster <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </div>
@@ -124,7 +153,7 @@ export default async function FullPotentialDashboard() {
             <p className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest group-hover:text-violet-500 transition-colors">Live Tests</p>
           </div>
           <div className="relative z-10">
-            <p className="text-4xl font-black text-slate-900 tracking-tight group-hover:text-violet-600 transition-colors">{examCount || 0}</p>
+            <p className="text-4xl font-black text-slate-900 tracking-tight group-hover:text-violet-600 transition-colors">{examCount}</p>
             <div className="mt-4 flex items-center gap-1.5 text-xs font-bold text-slate-500 group-hover:text-violet-600 transition-colors">
               NTA Engine <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </div>
