@@ -16,13 +16,15 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     setLoading("google");
+    setError(null);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        // This is the crucial callback URL we will build in Step 2
+        // 🔥 THE DEEP FIX: Dynamically grabs your domain so Google knows exactly where to send the secure token
         redirectTo: `${window.location.origin}/auth/callback`, 
       },
     });
+    
     if (error) {
       setError(error.message);
       setLoading(null);
@@ -67,17 +69,17 @@ export default function LoginPage() {
       setError(error.message);
       setLoading(null);
     } else {
-      // Upon success, hard redirect to dashboard layout which handles onboarding logic
+      // 🔥 SUCCESS: Hard redirect to dashboard layout which acts as the gatekeeper
       window.location.href = "/dashboard";
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#fafafa] flex flex-col justify-center py-12 sm:px-6 lg:px-8 selection:bg-indigo-500/30">
+    <div className="min-h-[100dvh] bg-[#fafafa] flex flex-col justify-center py-12 sm:px-6 lg:px-8 selection:bg-indigo-500/30">
       
       {/* Brand Header */}
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-8">
-        <div className="mx-auto h-12 w-12 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-slate-900/20">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="mx-auto h-14 w-14 bg-slate-900 rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-xl shadow-slate-900/20">
           CW
         </div>
         <h2 className="mt-6 text-center text-3xl font-black tracking-tight text-slate-900">
@@ -89,8 +91,8 @@ export default function LoginPage() {
       </div>
 
       {/* The Auth Card */}
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow-2xl shadow-slate-200/50 sm:rounded-[2rem] sm:px-10 border border-slate-100">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md animate-in fade-in zoom-in-95 duration-500">
+        <div className="bg-white py-8 px-4 shadow-2xl shadow-slate-200/50 sm:rounded-[2rem] sm:px-10 border border-slate-100 relative overflow-hidden">
           
           {step === "phone" ? (
             <div className="space-y-6">
@@ -113,7 +115,7 @@ export default function LoginPage() {
 
               <div className="relative">
                 <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200" /></div>
-                <div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-slate-400 font-bold">OR</span></div>
+                <div className="relative flex justify-center text-sm"><span className="px-3 bg-white text-slate-300 font-bold text-xs uppercase tracking-widest">OR</span></div>
               </div>
 
               {/* Phone Input Form */}
@@ -133,12 +135,12 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                {error && <p className="text-red-500 text-xs font-bold text-center">{error}</p>}
+                {error && <p className="text-red-500 text-xs font-bold text-center bg-red-50 py-2 rounded-lg">{error}</p>}
 
                 <button
                   type="submit"
                   disabled={loading !== null || phone.length < 10}
-                  className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white font-bold py-4 px-4 rounded-2xl transition-all active:scale-[0.98] hover:bg-slate-800 disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white font-bold py-4 px-4 rounded-2xl transition-all active:scale-[0.98] hover:bg-slate-800 disabled:opacity-50 shadow-lg shadow-slate-900/20"
                 >
                   {loading === "phone" ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Smartphone className="h-4 w-4" /> Send Login Code</>}
                 </button>
@@ -147,10 +149,10 @@ export default function LoginPage() {
           ) : (
             
             /* OTP VERIFICATION STEP */
-            <form onSubmit={handleOtpVerify} className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+            <form onSubmit={handleOtpVerify} className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-300">
               <div className="text-center">
-                <div className="mx-auto h-12 w-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-4">
-                  <ShieldCheck className="h-6 w-6" />
+                <div className="mx-auto h-14 w-14 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-4">
+                  <ShieldCheck className="h-7 w-7" />
                 </div>
                 <h3 className="text-xl font-black text-slate-900">Enter secure code</h3>
                 <p className="text-sm text-slate-500 font-medium mt-1">We sent a 6-digit code to +91 {phone}</p>
@@ -164,16 +166,16 @@ export default function LoginPage() {
                   placeholder="000000"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                  className="w-full text-center tracking-[0.5em] text-3xl font-black bg-slate-50 border border-slate-200 rounded-2xl py-4 focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none transition-all"
+                  className="w-full text-center tracking-[0.7em] text-4xl font-black bg-slate-50 border border-slate-200 rounded-2xl py-4 focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none transition-all placeholder:text-slate-200"
                 />
               </div>
 
-              {error && <p className="text-red-500 text-xs font-bold text-center">{error}</p>}
+              {error && <p className="text-red-500 text-xs font-bold text-center bg-red-50 py-2 rounded-lg">{error}</p>}
 
               <button
                 type="submit"
                 disabled={loading !== null || otp.length !== 6}
-                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white font-bold py-4 px-4 rounded-2xl transition-all active:scale-[0.98] hover:bg-slate-800 disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white font-bold py-4 px-4 rounded-2xl transition-all active:scale-[0.98] hover:bg-slate-800 disabled:opacity-50 shadow-lg shadow-slate-900/20"
               >
                 {loading === "otp" ? <Loader2 className="h-5 w-5 animate-spin" /> : <><ArrowRight className="h-4 w-4" /> Verify & Continue</>}
               </button>
