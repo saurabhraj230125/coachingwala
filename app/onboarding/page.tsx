@@ -7,13 +7,11 @@ import { ArrowRight, Users, Wallet, Calendar, MessageSquare, Loader2 } from "luc
 export default function OnboardingPage() {
   const supabase = createClient();
   const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Form State
   const [instituteName, setInstituteName] = useState("");
   const [studentScale, setStudentScale] = useState("");
-  const [painPoint, setPainPoint] = useState("");
 
   // Labor Illusion State
   const [loadingText, setLoadingText] = useState("Provisioning secure database...");
@@ -27,10 +25,9 @@ export default function OnboardingPage() {
 
   // Handle the final submission and the "Labor Illusion"
   const handleCompleteSetup = async (selectedPainPoint: string) => {
-    setPainPoint(selectedPainPoint);
     setStep(4); // Move to loading screen
     
-    // 1. Start the UI Labor Illusion (Psychological Hook)
+    // 1. Start the UI Labor Illusion
     const texts = [
       "Provisioning secure database...",
       "Configuring fee tracking engine...",
@@ -43,37 +40,52 @@ export default function OnboardingPage() {
       if (i < texts.length) setLoadingText(texts[i]);
     }, 1200);
 
-    // 2. Fetch User and Save to Supabase
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (user) {
-      // 🔥 THE DEEP FIX: We now explicitly check for 'error'
-      const { error } = await supabase.from("institutes").upsert({
+    try {
+      // 2. Fetch User
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        throw new Error("Authentication failed. Please sign in again.");
+      }
+
+      // 3. Save to Supabase
+      const { error: dbError } = await supabase.from("institutes").upsert({
         owner_id: user.id,
         name: instituteName,
         student_scale: studentScale,
         primary_pain_point: selectedPainPoint,
         onboarding_completed: true, 
+        phone_number: user.phone || "NOT_PROVIDED" // Prevents constraint crashes
       }, { onConflict: 'owner_id' });
 
-      // IF THE DATABASE FAILS, STOP THE REDIRECT!
-      if (error) {
+      // IF THE DATABASE FAILS, CATCH IT AND LOG IT
+      if (dbError) {
         clearInterval(interval);
-        setLoadingText("Security Alert: " + error.message);
-        alert("Database Error: " + error.message + "\n\nDid you enable RLS policies?");
+        console.error("Vercel Database Error:", dbError);
+        setLoadingText("Security Alert: " + dbError.message);
+        alert("Database Error: " + dbError.message);
+        setStep(3); // Safely push user back to step 3 so the app doesn't hang
         return; 
       }
-    }
 
-    // 3. If successful, wait for the illusion to finish, then hard redirect
-    setTimeout(() => {
+      // 4. If successful, wait for the illusion to finish, then hard redirect
+      setTimeout(() => {
+        clearInterval(interval);
+        window.location.href = "/dashboard";
+      }, 4800);
+
+    } catch (err: any) {
+      // Catch fatal Vercel crashes
       clearInterval(interval);
-      window.location.href = "/dashboard";
-    }, 4800);
+      console.error("Vercel Runtime Error:", err);
+      alert(err.message || "A fatal error occurred. Check Vercel logs.");
+      setStep(3);
+    }
   };
 
   return (
-    <div className="h-[100dvh] w-full bg-[#fafafa] flex flex-col items-center justify-center overflow-hidden selection:bg-indigo-500/30">
+    // 🔥 THE DEEP FIX: suppressHydrationWarning prevents Vercel from crashing due to Chrome Extensions
+    <div suppressHydrationWarning className="h-[100dvh] w-full bg-[#fafafa] flex flex-col items-center justify-center overflow-hidden selection:bg-indigo-500/30">
       
       {/* Progress Bar */}
       {step < 4 && (
