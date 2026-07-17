@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import Sidebar from "./components/Sidebar";
+import CommandPalette from "./components/CommandPalette"; // <-- Added import
 
 export default async function DashboardLayout({
   children,
@@ -19,6 +20,9 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-[100dvh] bg-[#f4f7fb] text-slate-900 font-sans flex flex-col md:flex-row antialiased selection:bg-indigo-500/30">
       
+      {/* Global Command Palette (Cmd + K) */}
+      <CommandPalette />
+
       {/* 
         This is the new Client Component we built. 
         It handles the mobile slide-out logic while keeping your layout a Server Component! 
