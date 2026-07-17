@@ -12,9 +12,10 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// 🔥 THE MISSION: Upgraded to our premium SaaS identity
 export const metadata: Metadata = {
-  title: "CoachingStack - Institute Management",
-  description: "Manage your coaching institute seamlessly.",
+  title: "CoachingWala OS | The Future of Coaching",
+  description: "The premium operating system to manage admissions, fees, tests, and students for modern coaching institutes.",
 };
 
 export default function RootLayout({
@@ -23,13 +24,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // suppressHydrationWarning is the exact fix for the extension injection error
+    // suppressHydrationWarning prevents extension injection errors (like Grammarly)
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-[#f8fafc] text-slate-900">
+      <body className="min-h-full flex flex-col bg-[#fafafa] text-slate-900 selection:bg-indigo-500/30">
         {children}
       </body>
     </html>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { ArrowRight, Users, Wallet, Calendar, MessageSquare, Loader2, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Users, Wallet, Calendar, MessageSquare, Loader2 } from "lucide-react";
 
 export default function OnboardingPage() {
   const supabase = createClient();
@@ -43,24 +43,31 @@ export default function OnboardingPage() {
       if (i < texts.length) setLoadingText(texts[i]);
     }, 1200);
 
-    // 2. Actually save to Supabase in the background
+    // 2. Fetch User and Save to Supabase
     const { data: { user } } = await supabase.auth.getUser();
     
     if (user) {
-      await supabase.from("institutes").upsert({
+      // 🔥 THE DEEP FIX: We now explicitly check for 'error'
+      const { error } = await supabase.from("institutes").upsert({
         owner_id: user.id,
         name: instituteName,
         student_scale: studentScale,
         primary_pain_point: selectedPainPoint,
-        onboarding_completed: true, // This breaks the gatekeeper lock!
+        onboarding_completed: true, 
       }, { onConflict: 'owner_id' });
+
+      // IF THE DATABASE FAILS, STOP THE REDIRECT!
+      if (error) {
+        clearInterval(interval);
+        setLoadingText("Security Alert: " + error.message);
+        alert("Database Error: " + error.message + "\n\nDid you enable RLS policies?");
+        return; 
+      }
     }
 
-    // 3. Wait for the illusion to finish, then hard redirect
+    // 3. If successful, wait for the illusion to finish, then hard redirect
     setTimeout(() => {
       clearInterval(interval);
-      // 🔥 THE FIX: Do NOT use router.push(). 
-      // window.location.href forces the server to re-fetch the layout and recognize onboarding is done!
       window.location.href = "/dashboard";
     }, 4800);
   };
