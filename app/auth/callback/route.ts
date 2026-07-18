@@ -2,23 +2,23 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 
 export async function GET(request: Request) {
-  // Grab the URL and the secure code Google sent back
-  const { searchParams, origin } = new URL(request.url)
-  const code = searchParams.get('code')
-  
+  // 🔥 THE DEEP FIX: Dynamically grabs the current host (coachingwala.vercel.app)
+  const requestUrl = new URL(request.url)
+  const code = requestUrl.searchParams.get('code')
+  const next = requestUrl.searchParams.get('next') ?? '/dashboard'
+
   if (code) {
     const supabase = await createClient()
-    
-    // Exchange the code for a secure session token
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     
-    if (error) {
+    if (!error) {
+      // Securely redirects using the exact domain the user is currently on
+      return NextResponse.redirect(`${requestUrl.origin}${next}`)
+    } else {
       console.error("Auth Callback Error:", error.message)
-      return NextResponse.redirect(`${origin}/login?error=auth_failed`)
     }
   }
 
-  // 🔥 SUCCESS: Hard redirect them to the dashboard gatekeeper. 
-  // The layout.tsx will check if they need to go to Onboarding or the Premium Dashboard.
-  return NextResponse.redirect(`${origin}/dashboard`)
+  // If it fails, send them back to login instead of infinite looping
+  return NextResponse.redirect(`${requestUrl.origin}/login?error=true`)
 }

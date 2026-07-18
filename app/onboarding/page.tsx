@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+// 🔥 THE DEEP FIX: Import the Next.js router
+import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { ArrowRight, Users, Wallet, Calendar, MessageSquare, Loader2 } from "lucide-react";
 
 export default function OnboardingPage() {
   const supabase = createClient();
+  const router = useRouter(); // Initialize the Next.js router
   const [step, setStep] = useState(1);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -68,10 +71,12 @@ export default function OnboardingPage() {
         return; 
       }
 
-      // 4. If successful, wait for the illusion to finish, then hard redirect
+      // 4. If successful, wait for the illusion to finish, then securely redirect
       setTimeout(() => {
         clearInterval(interval);
-        window.location.href = "/dashboard";
+        // 🔥 THE DEEP FIX: Wipe the Next.js memory cache, then strictly push to dashboard
+        router.refresh(); 
+        router.push("/dashboard");
       }, 4800);
 
     } catch (err: any) {
