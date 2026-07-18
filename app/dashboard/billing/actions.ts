@@ -11,7 +11,7 @@ export async function submitUTR(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
-  // Update their subscription status to pending
+  // Update their subscription status to pending verification
   const { error } = await supabase
     .from("institutes")
     .update({
@@ -20,8 +20,11 @@ export async function submitUTR(formData: FormData) {
     })
     .eq("owner_id", user.id);
 
-  if (error) throw new Error("Failed to submit UTR");
+  if (error) {
+    console.error(error);
+    throw new Error("Failed to submit UTR");
+  }
 
-  // Instantly refresh the billing page to show the "Pending" screen
+  // Instantly refresh the billing page 
   revalidatePath("/dashboard/billing");
 }

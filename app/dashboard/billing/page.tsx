@@ -1,21 +1,40 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Zap, Shield, QrCode, Smartphone, ArrowRight, Loader2, Star } from "lucide-react";
+import { CheckCircle2, Zap, Shield, QrCode, Smartphone, ArrowRight, Loader2, Star, Check } from "lucide-react";
+import { submitUTR } from "./actions";
 
 export default function BillingPage() {
   const [selectedPlan, setSelectedPlan] = useState<null | 'STARTER' | 'PRO' | 'MAX'>(null);
+  const [isAnnual, setIsAnnual] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
 
-  // Your exact UPI Details
+  // Exact UPI Details tailored for your brand
   const UPI_ID = "6306814355@ptsbi";
-  const PAYEE_NAME = "CoachingWala SaaS";
+  const PAYEE_NAME = "Future Q"; 
 
+  // Psychological Pricing Model
   const plans = {
-    STARTER: { price: 500, name: "Starter Plan", desc: "Perfect for new batches." },
-    PRO: { price: 1000, name: "Pro Plan", desc: "For growing coaching centers." },
-    MAX: { price: 1500, name: "Max Plan", desc: "The ultimate NTA-level ecosystem." }
+    STARTER: { 
+      monthly: 499, annual: 4999, 
+      name: "Starter Plan", desc: "Perfect for new batches.", 
+      features: ['Up to 50 Students', 'Student Roster', 'Basic Attendance']
+    },
+    PRO: { 
+      monthly: 1499, annual: 14999, 
+      name: "Pro Plan", desc: "For growing coaching centers.", 
+      features: ['Up to 300 Students', 'Fee Collection System', 'Student Gateway', 'NTA Test Engine']
+    },
+    MAX: { 
+      monthly: 3999, annual: 39999, 
+      name: "Max Plan", desc: "The ultimate scalable ecosystem.", 
+      features: ['Unlimited Students', 'WhatsApp Automations', 'Priority Support', 'Custom Domain Setup']
+    }
+  };
+
+  const getPrice = (planKey: 'STARTER' | 'PRO' | 'MAX') => {
+    return isAnnual ? plans[planKey].annual : plans[planKey].monthly;
   };
 
   const getUpiUrl = (amount: number) => {
@@ -27,12 +46,21 @@ export default function BillingPage() {
     return `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiString)}&color=1e1b4b`;
   };
 
-  const handleSimulatedVerification = () => {
+  const handlePaymentSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     setIsVerifying(true);
-    setTimeout(() => {
-      setIsVerifying(false);
+    
+    const formData = new FormData(e.currentTarget);
+    
+    try {
+      // Calls the secure Next.js Server Action
+      await submitUTR(formData);
       setPaymentSuccess(true);
-    }, 2500);
+    } catch (error) {
+      alert("Something went wrong. Please check your connection and try again.");
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   if (paymentSuccess) {
@@ -41,9 +69,9 @@ export default function BillingPage() {
         <div className="h-24 w-24 bg-emerald-100 rounded-full flex items-center justify-center mb-6 shadow-xl shadow-emerald-500/20">
           <CheckCircle2 className="h-12 w-12 text-emerald-600" />
         </div>
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Payment Received!</h1>
+        <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Verification Pending!</h1>
         <p className="text-slate-500 font-medium max-w-md">
-          Your account is being upgraded. Our system is verifying the UTR with the bank. You will have full access shortly.
+          We have received your UTR number. Our finance team will verify the payment with the bank shortly. Your dashboard will automatically unlock once approved.
         </p>
         <button onClick={() => window.location.href = '/dashboard'} className="mt-8 px-8 py-3.5 bg-slate-900 text-white font-bold rounded-2xl hover:bg-slate-800 transition-all active:scale-95">
           Return to Dashboard
@@ -53,182 +81,152 @@ export default function BillingPage() {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto pb-24 md:pb-8 w-full">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto pb-24 md:pb-8 w-full selection:bg-indigo-100">
       
-      <div className="mb-8 md:mb-12 text-center">
-        <h1 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900 flex items-center justify-center gap-2">
-          Choose Your Engine <Zap className="h-6 w-6 md:h-8 md:w-8 text-amber-500 fill-amber-500" />
+      <div className="mb-10 text-center">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-full text-xs font-bold uppercase tracking-widest text-indigo-700 mb-4">
+          <Shield className="h-4 w-4" /> Trusted by Coaching Centers
+        </div>
+        <h1 className="text-3xl md:text-5xl font-black tracking-tight text-slate-900 mb-4">
+          Simple, transparent pricing.
         </h1>
-        <p className="text-sm md:text-base text-slate-500 mt-2 font-medium max-w-2xl mx-auto">
-          Upgrade to unlock NTA test engines, automated fee management, and infinite storage. Zero transaction fees—pay directly via UPI.
-        </p>
+        
+        {/* The Cashflow Toggle */}
+        <div className="mt-8 flex items-center justify-center gap-3">
+          <span className={`text-sm font-bold ${!isAnnual ? 'text-slate-900' : 'text-slate-400'}`}>Pay Monthly</span>
+          <button 
+            onClick={() => setIsAnnual(!isAnnual)}
+            className="w-14 h-7 bg-slate-900 rounded-full relative p-1 transition-colors"
+          >
+            <div className={`w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${isAnnual ? 'translate-x-7' : 'translate-x-0'}`} />
+          </button>
+          <span className={`text-sm font-bold flex items-center gap-2 ${isAnnual ? 'text-slate-900' : 'text-slate-400'}`}>
+            Pay Annually 
+            <span className="bg-emerald-100 text-emerald-700 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md">Save 17%</span>
+          </span>
+        </div>
       </div>
 
-      {/* 3-TIER PRICING GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* PRICING GRID */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto">
         
-        {/* STARTER PLAN */}
-        <div 
-          onClick={() => setSelectedPlan('STARTER')}
-          className={`group relative text-left cursor-pointer border-2 rounded-[2rem] p-6 transition-all duration-300 active:scale-[0.98] flex flex-col ${
-            selectedPlan === 'STARTER' 
-              ? 'bg-blue-50/50 border-blue-500 shadow-xl shadow-blue-500/10' 
-              : 'bg-white border-slate-200 hover:border-blue-300 hover:shadow-lg hover:shadow-blue-500/5'
-          }`}
-        >
-          <h2 className="text-lg font-black text-slate-900">Starter Plan</h2>
-          <p className="text-xs font-bold text-slate-500 mt-1">{plans.STARTER.desc}</p>
-          <div className="mt-4 mb-8 flex items-baseline text-4xl font-black text-slate-900 tracking-tighter">
-            ₹500
-            <span className="ml-1 text-sm font-bold text-slate-400">/mo</span>
+        {/* STARTER */}
+        <div onClick={() => setSelectedPlan('STARTER')} className={`group relative cursor-pointer border-2 rounded-[2rem] p-8 transition-all duration-300 flex flex-col ${selectedPlan === 'STARTER' ? 'bg-slate-50 border-slate-900 shadow-xl' : 'bg-white border-slate-200 hover:border-slate-300'}`}>
+          <h2 className="text-xl font-black text-slate-900">{plans.STARTER.name}</h2>
+          <p className="text-sm font-medium text-slate-500 mt-2">{plans.STARTER.desc}</p>
+          <div className="mt-6 mb-8 flex items-end gap-1">
+            <span className="text-4xl font-black text-slate-900">₹{getPrice('STARTER')}</span>
+            <span className="text-sm font-bold text-slate-400 mb-1">/{isAnnual ? 'yr' : 'mo'}</span>
           </div>
-          <ul className="space-y-3 flex-1">
-            {['Student Roster Management', 'Daily Attendance Tracking', 'Up to 100 Students'].map((feature, i) => (
-              <li key={i} className="flex items-start gap-2.5 text-xs font-bold text-slate-700">
-                <CheckCircle2 className={`h-4 w-4 shrink-0 transition-colors ${selectedPlan === 'STARTER' ? 'text-blue-600' : 'text-slate-400'}`} /> 
-                <span className="leading-tight">{feature}</span>
+          <ul className="space-y-4 flex-1">
+            {plans.STARTER.features.map((feature, i) => (
+              <li key={i} className="flex items-start gap-3 text-sm font-bold text-slate-700">
+                <Check className={`h-5 w-5 shrink-0 ${selectedPlan === 'STARTER' ? 'text-slate-900' : 'text-slate-300'}`} /> {feature}
               </li>
             ))}
           </ul>
-          <div className={`mt-8 w-full py-3.5 rounded-xl font-bold text-xs text-center transition-all ${
-            selectedPlan === 'STARTER' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-slate-50 text-slate-700 group-hover:bg-slate-100'
-          }`}>
-            {selectedPlan === 'STARTER' ? 'Selected - Scroll Down' : 'Select Starter'}
-          </div>
         </div>
 
-        {/* PRO PLAN */}
-        <div 
-          onClick={() => setSelectedPlan('PRO')}
-          className={`group relative text-left cursor-pointer border-2 rounded-[2rem] p-6 transition-all duration-300 active:scale-[0.98] flex flex-col ${
-            selectedPlan === 'PRO' 
-              ? 'bg-indigo-50 border-indigo-600 shadow-2xl shadow-indigo-500/20' 
-              : 'bg-white border-slate-200 hover:border-indigo-300 hover:shadow-xl hover:shadow-indigo-500/5'
-          }`}
-        >
-          <h2 className="text-lg font-black text-slate-900">Pro Plan</h2>
-          <p className="text-xs font-bold text-slate-500 mt-1">{plans.PRO.desc}</p>
-          <div className="mt-4 mb-8 flex items-baseline text-4xl font-black text-slate-900 tracking-tighter">
-            ₹1,000
-            <span className="ml-1 text-sm font-bold text-slate-400">/mo</span>
+        {/* PRO (The Target) */}
+        <div onClick={() => setSelectedPlan('PRO')} className={`group relative cursor-pointer border-2 rounded-[2rem] p-8 transition-all duration-300 flex flex-col ${selectedPlan === 'PRO' ? 'bg-indigo-50/50 border-indigo-600 shadow-2xl shadow-indigo-500/20' : 'bg-white border-slate-200 hover:border-indigo-300'}`}>
+          <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-md">
+            Most Popular
           </div>
-          <ul className="space-y-3 flex-1">
-            {['Everything in Starter', 'Fee Collection Dashboard', 'WhatsApp Reminders', 'Up to 500 Students'].map((feature, i) => (
-              <li key={i} className="flex items-start gap-2.5 text-xs font-bold text-slate-700">
-                <CheckCircle2 className={`h-4 w-4 shrink-0 transition-colors ${selectedPlan === 'PRO' ? 'text-indigo-600' : 'text-emerald-500'}`} /> 
-                <span className="leading-tight">{feature}</span>
+          <h2 className="text-xl font-black text-slate-900">{plans.PRO.name}</h2>
+          <p className="text-sm font-medium text-slate-500 mt-2">{plans.PRO.desc}</p>
+          <div className="mt-6 mb-8 flex items-end gap-1">
+            <span className="text-4xl font-black text-indigo-900">₹{getPrice('PRO')}</span>
+            <span className="text-sm font-bold text-indigo-400 mb-1">/{isAnnual ? 'yr' : 'mo'}</span>
+          </div>
+          <ul className="space-y-4 flex-1">
+            {plans.PRO.features.map((feature, i) => (
+              <li key={i} className="flex items-start gap-3 text-sm font-bold text-slate-700">
+                <Check className={`h-5 w-5 shrink-0 ${selectedPlan === 'PRO' ? 'text-indigo-600' : 'text-slate-300'}`} /> {feature}
               </li>
             ))}
           </ul>
-          <div className={`mt-8 w-full py-3.5 rounded-xl font-bold text-xs text-center transition-all ${
-            selectedPlan === 'PRO' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-indigo-50 text-indigo-700 group-hover:bg-indigo-100'
-          }`}>
-            {selectedPlan === 'PRO' ? 'Selected - Scroll Down' : 'Select Pro'}
-          </div>
         </div>
 
-        {/* MAX PLAN */}
-        <div 
-          onClick={() => setSelectedPlan('MAX')}
-          className={`group relative text-left cursor-pointer border-2 rounded-[2rem] p-6 transition-all duration-300 active:scale-[0.98] flex flex-col ${
-            selectedPlan === 'MAX' 
-              ? 'bg-gradient-to-b from-slate-900 to-indigo-950 border-amber-400 shadow-2xl shadow-amber-500/20' 
-              : 'bg-gradient-to-b from-slate-900 to-slate-950 border-slate-800 hover:border-slate-700 hover:shadow-xl hover:shadow-slate-900/50'
-          }`}
-        >
-          <div className="absolute top-0 right-6 transform -translate-y-1/2">
-            <span className="bg-gradient-to-r from-amber-400 to-amber-200 text-amber-900 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg flex items-center gap-1">
-              <Star className="h-3 w-3 fill-amber-900" /> Best Value
-            </span>
+        {/* MAX (The Decoy) */}
+        <div onClick={() => setSelectedPlan('MAX')} className={`group relative cursor-pointer border-2 rounded-[2rem] p-8 transition-all duration-300 flex flex-col ${selectedPlan === 'MAX' ? 'bg-slate-900 border-amber-400 shadow-2xl shadow-amber-500/10' : 'bg-slate-900 border-slate-800 hover:border-slate-700'}`}>
+          <h2 className="text-xl font-black text-white">{plans.MAX.name}</h2>
+          <p className="text-sm font-medium text-slate-400 mt-2">{plans.MAX.desc}</p>
+          <div className="mt-6 mb-8 flex items-end gap-1">
+            <span className="text-4xl font-black text-white">₹{getPrice('MAX')}</span>
+            <span className="text-sm font-bold text-slate-500 mb-1">/{isAnnual ? 'yr' : 'mo'}</span>
           </div>
-          <h2 className="text-lg font-black text-white">Max Plan</h2>
-          <p className="text-xs font-bold text-indigo-200 mt-1">{plans.MAX.desc}</p>
-          <div className="mt-4 mb-8 flex items-baseline text-4xl font-black text-white tracking-tighter">
-            ₹1,500
-            <span className="ml-1 text-sm font-bold text-indigo-300">/mo</span>
-          </div>
-          <ul className="space-y-3 flex-1">
-            {['Everything in Pro', 'NTA-Level Exam Engine', 'Unlimited Students', 'Premium Study Vault'].map((feature, i) => (
-              <li key={i} className="flex items-start gap-2.5 text-xs font-bold text-indigo-100">
-                <CheckCircle2 className={`h-4 w-4 shrink-0 transition-colors ${selectedPlan === 'MAX' ? 'text-amber-400' : 'text-indigo-400'}`} /> 
-                <span className="leading-tight">{feature}</span>
+          <ul className="space-y-4 flex-1">
+            {plans.MAX.features.map((feature, i) => (
+              <li key={i} className="flex items-start gap-3 text-sm font-bold text-slate-300">
+                <Check className={`h-5 w-5 shrink-0 ${selectedPlan === 'MAX' ? 'text-amber-400' : 'text-slate-600'}`} /> {feature}
               </li>
             ))}
           </ul>
-          <div className={`mt-8 w-full py-3.5 rounded-xl font-bold text-xs text-center transition-all ${
-            selectedPlan === 'MAX' ? 'bg-gradient-to-r from-amber-400 to-amber-300 text-amber-950 shadow-lg shadow-amber-500/20' : 'bg-white/10 text-white group-hover:bg-white/20'
-          }`}>
-            {selectedPlan === 'MAX' ? 'Selected - Scroll Down' : 'Select Max'}
-          </div>
         </div>
       </div>
 
       {/* SECURE PAYMENT MODAL */}
       {selectedPlan && (
-        <div className="mt-10 p-6 md:p-8 bg-white border border-slate-200 rounded-[2rem] shadow-xl animate-in fade-in slide-in-from-bottom-8 duration-500">
-          <div className="flex flex-col lg:flex-row gap-8 items-center justify-between">
+        <div className="mt-12 p-6 md:p-10 bg-white border border-slate-200 rounded-[2.5rem] shadow-xl animate-in fade-in slide-in-from-bottom-8 duration-500 max-w-4xl mx-auto">
+          <div className="flex flex-col md:flex-row gap-10 items-center justify-between">
             
-            <div className="flex-1 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
-                <Shield className="h-3 w-3" /> 100% Secure UPI
-              </div>
-              <h3 className="text-2xl font-black text-slate-900 mb-2">Complete your upgrade</h3>
-              <p className="text-slate-500 text-sm font-medium mb-6">
-                You selected the <span className="font-bold text-indigo-600">{plans[selectedPlan].name}</span> for ₹{plans[selectedPlan].price}/mo. Scan the QR code or tap the button below to pay directly.
+            <div className="flex-1 text-center md:text-left">
+              <h3 className="text-2xl font-black text-slate-900 mb-2">Finalize your upgrade</h3>
+              <p className="text-slate-500 text-sm font-medium mb-6 leading-relaxed">
+                You are upgrading to the <span className="font-bold text-indigo-600">{plans[selectedPlan].name}</span> for ₹{getPrice(selectedPlan)}. We charge exactly zero transaction fees. Pay directly to our business account via UPI.
               </p>
 
-              {/* MOBILE ONLY: Deep Link Button */}
               <a 
-                href={getUpiUrl(plans[selectedPlan].price)}
-                className="lg:hidden w-full flex items-center justify-center gap-2 bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 active:scale-95 transition-all"
+                href={getUpiUrl(getPrice(selectedPlan))}
+                className="md:hidden w-full flex items-center justify-center gap-2 bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition-all mb-6"
               >
-                <Smartphone className="h-5 w-5" /> Open GPay / PhonePe
+                <Smartphone className="h-5 w-5" /> Open UPI App to Pay
               </a>
+
+              <form onSubmit={handlePaymentSubmit} className="bg-slate-50 p-6 rounded-3xl border border-slate-200">
+                <label className="block text-xs font-black text-slate-900 uppercase tracking-widest mb-3">
+                  Step 2: Enter UTR Number
+                </label>
+                <p className="text-xs text-slate-500 font-medium mb-4">After paying, find the 12-digit UTR/Reference number in your UPI app and enter it below.</p>
+                
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <input 
+                    type="text" 
+                    name="utr"
+                    required
+                    minLength={12}
+                    maxLength={12}
+                    placeholder="e.g. 312456789012"
+                    className="flex-1 bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                  />
+                  <button 
+                    type="submit"
+                    disabled={isVerifying}
+                    className="flex items-center justify-center gap-2 bg-slate-900 text-white font-bold px-8 py-3 rounded-xl shadow-md hover:bg-slate-800 transition-all active:scale-95 disabled:opacity-70 whitespace-nowrap"
+                  >
+                    {isVerifying ? <Loader2 className="h-5 w-5 animate-spin" /> : "Submit for Verification"}
+                  </button>
+                </div>
+              </form>
             </div>
 
-            {/* DESKTOP ONLY: QR Code */}
-            <div className="hidden lg:flex flex-col items-center bg-slate-50 p-5 rounded-3xl border border-slate-200">
-              <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 mb-3">
+            <div className="hidden md:flex flex-col items-center bg-white p-6 rounded-[2rem] border-2 border-slate-100 shadow-sm shrink-0">
+              <div className="bg-slate-50 p-4 rounded-2xl mb-4">
                 <img 
-                  src={getQrUrl(plans[selectedPlan].price)} 
+                  src={getQrUrl(getPrice(selectedPlan))} 
                   alt="UPI QR Code" 
-                  className="w-36 h-36 object-contain"
+                  className="w-40 h-40 object-contain mix-blend-multiply"
                 />
               </div>
-              <p className="text-xs font-bold text-slate-500 flex items-center gap-1">
-                <QrCode className="h-4 w-4" /> Scan with any UPI app
+              <p className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 mb-1">
+                <QrCode className="h-4 w-4" /> Scan to Pay
               </p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase">Google Pay • PhonePe • Paytm</p>
             </div>
             
           </div>
-
-          <div className="mt-8 pt-6 border-t border-slate-100">
-            <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2 pl-1">
-              Confirm your payment
-            </label>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <input 
-                type="text" 
-                placeholder="Enter 12-digit UTR / Reference No."
-                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-              />
-              <button 
-                onClick={handleSimulatedVerification}
-                disabled={isVerifying}
-                className="flex items-center justify-center gap-2 bg-slate-900 text-white font-bold px-8 py-3 rounded-xl shadow-lg hover:bg-slate-800 transition-all active:scale-95 disabled:opacity-70"
-              >
-                {isVerifying ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /> Verifying...</>
-                ) : (
-                  <>Verify Payment <ArrowRight className="h-4 w-4" /></>
-                )}
-              </button>
-            </div>
-          </div>
-
         </div>
       )}
-
     </div>
   );
 }
