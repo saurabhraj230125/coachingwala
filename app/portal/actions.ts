@@ -22,8 +22,9 @@ export async function loginStudent(formData: FormData) {
     .eq("pin", pin)
     .single();
 
+  // 🔥 THE VERCEL FIX: Return an object instead of throwing an error!
   if (error || !student) {
-    throw new Error("Invalid username or PIN. Please check your WhatsApp message.");
+    return { error: "Invalid username or PIN. Please check your WhatsApp message." };
   }
 
   // 2. Await cookies and set all three precisely as your dashboard expects
