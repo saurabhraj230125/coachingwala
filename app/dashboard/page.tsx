@@ -3,7 +3,7 @@ import Link from "next/link";
 import { 
   Users, CalendarCheck, Wallet, BookOpenCheck, 
   ExternalLink, ArrowRight, ShieldCheck, 
-  TrendingUp, LayoutDashboard, Sparkles, Zap
+  TrendingUp, LayoutDashboard, Share2, Plus
 } from "lucide-react";
 import CopyButton from "./components/CopyButton";
 
@@ -36,131 +36,126 @@ export default async function FullPotentialDashboard() {
     if (!eError) examCount = eCount || 0;
   }
 
-  // 🔥 THE CORRECTED PORTAL LINK
   const portalUrl = process.env.NEXT_PUBLIC_STUDENT_PORTAL_URL || "https://student-portal-app-omega.vercel.app";
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 w-full pb-24 md:pb-12 bg-slate-50/30 min-h-screen">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6 w-full pb-24 min-h-screen">
       
-      {/* 1. PREMIUM ANIMATED HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-4">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 bg-indigo-100/50 text-indigo-700 px-3 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border border-indigo-200/50 shadow-sm">
-            <LayoutDashboard className="h-4 w-4" /> Management Console
+      {/* 1. CLEAN HEADER & QUICK ACTIONS */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-2">
+        <div>
+          <div className="flex items-center gap-2 text-slate-500 mb-2">
+            <LayoutDashboard className="h-4 w-4" />
+            <span className="text-xs font-bold uppercase tracking-widest">Overview</span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-slate-900 via-slate-800 to-slate-500 pb-1">
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900">
             {institute?.name || "Your Coaching Center"}
           </h1>
         </div>
         
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          <Link href="/dashboard/students" className="group flex items-center justify-center gap-2 px-6 py-3.5 bg-white border border-slate-200 text-slate-700 font-bold text-sm rounded-xl shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 hover:border-indigo-300 transition-all duration-300 active:scale-95">
-            <Users className="h-4 w-4 text-slate-400 group-hover:text-indigo-500 transition-colors" /> Add Student
+          <Link href="/dashboard/students" className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-slate-700 font-bold text-sm rounded-xl shadow-sm hover:border-slate-300 hover:bg-slate-50 transition-all active:scale-95">
+            <Plus className="h-4 w-4 text-slate-400" /> Add Student
           </Link>
-          <Link href="/dashboard/attendance" className="group flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-slate-900 to-slate-800 text-white font-bold text-sm rounded-xl shadow-lg shadow-slate-900/20 hover:shadow-xl hover:shadow-indigo-500/20 transition-all duration-300 active:scale-95 overflow-hidden relative">
-            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out"></div>
-            <CalendarCheck className="h-4 w-4 relative z-10" /> <span className="relative z-10">Mark Attendance</span>
+          <Link href="/dashboard/attendance" className="flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 text-white font-bold text-sm rounded-xl shadow-sm shadow-indigo-600/20 hover:bg-indigo-700 transition-all active:scale-95">
+            <CalendarCheck className="h-4 w-4" /> Mark Attendance
           </Link>
         </div>
       </div>
 
-      {/* 2. THE ULTRA-GATEWAY WIDGET (Deep Dark Mode Glassmorphism) */}
-      <div className="relative rounded-[2rem] p-1 overflow-hidden group shadow-2xl shadow-indigo-900/10">
-        {/* Deep Animated Gradients */}
-        <div className="absolute inset-0 bg-slate-900"></div>
-        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/30 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 group-hover:bg-indigo-400/40 transition-colors duration-700"></div>
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-emerald-500/20 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/3 group-hover:bg-emerald-400/30 transition-colors duration-700"></div>
-        
-        <div className="relative z-10 bg-slate-900/40 backdrop-blur-3xl rounded-[1.85rem] p-8 md:p-10 border border-white/10 flex flex-col lg:flex-row items-center justify-between gap-10 overflow-hidden">
-          
-          <div className="flex-1 w-full text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 bg-emerald-500/10 text-emerald-300 px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest mb-6 border border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.15)]">
-              <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-ping"></span>
-              Portal is Live
-            </div>
-            <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight mb-4 flex items-center justify-center lg:justify-start gap-3">
-              Student App Gateway <Sparkles className="h-7 w-7 text-indigo-400 animate-pulse" />
-            </h2>
-            <p className="text-slate-300 text-base max-w-lg leading-relaxed font-medium">
-              Give your students superpowers. Share this dedicated portal link on WhatsApp so they can track attendance, download notes, and view mock test results instantly.
-            </p>
-          </div>
-
-          <div className="w-full lg:w-auto bg-black/40 backdrop-blur-xl p-6 rounded-3xl border border-white/10 shadow-2xl lg:min-w-[420px] transform hover:scale-[1.02] transition-transform duration-500">
-            <p className="text-xs font-black text-indigo-300 uppercase tracking-widest mb-3 flex items-center gap-2">
-              <Zap className="h-3 w-3" /> Shareable URL
-            </p>
-            <div className="bg-white/5 px-4 py-4 rounded-2xl flex items-center justify-between border border-white/10 mb-4 group/link">
-              <code className="text-indigo-100 text-sm font-bold truncate mr-4 selection:bg-indigo-500">{portalUrl}</code>
-              <a href={portalUrl} target="_blank" rel="noreferrer" className="shrink-0 bg-indigo-500/20 p-2.5 rounded-xl hover:bg-indigo-500 hover:text-white transition-all text-indigo-300 group-hover/link:rotate-12 group-hover/link:scale-110">
-                <ExternalLink className="h-4 w-4" />
-              </a>
-            </div>
-            <CopyButton url={portalUrl} />
-          </div>
-        </div>
-      </div>
-
-      {/* 3. BENTO METRICS GRID (Animated Cards with Simple Terminology) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      {/* 2. MINIMALIST METRICS GRID */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { title: "Total Students", value: studentCount, icon: Users, color: "text-indigo-600", hoverIcon: "group-hover:text-indigo-500", bg: "bg-indigo-50", link: "/dashboard/students", borderHover: "hover:border-indigo-300", shadowHover: "hover:shadow-indigo-500/15" },
-          { title: "Daily Attendance", value: "Mark Now", icon: CalendarCheck, color: "text-emerald-600", hoverIcon: "group-hover:text-emerald-500", bg: "bg-emerald-50", link: "/dashboard/attendance", borderHover: "hover:border-emerald-300", shadowHover: "hover:shadow-emerald-500/15", badge: "Today" },
-          { title: "Fee Collection", value: "View Dues", icon: Wallet, color: "text-amber-600", hoverIcon: "group-hover:text-amber-500", bg: "bg-amber-50", link: "/dashboard/fees", borderHover: "hover:border-amber-300", shadowHover: "hover:shadow-amber-500/15" },
-          { title: "Mock Tests", value: examCount, icon: BookOpenCheck, color: "text-rose-600", hoverIcon: "group-hover:text-rose-500", bg: "bg-rose-50", link: "/dashboard/exams", borderHover: "hover:border-rose-300", shadowHover: "hover:shadow-rose-500/15" },
+          { title: "Active Students", value: studentCount, icon: Users, color: "text-indigo-600", bg: "bg-indigo-50", link: "/dashboard/students" },
+          { title: "Today's Attendance", value: "Mark Now", icon: CalendarCheck, color: "text-emerald-600", bg: "bg-emerald-50", link: "/dashboard/attendance", action: true },
+          { title: "Fee Dues", value: "Check", icon: Wallet, color: "text-amber-600", bg: "bg-amber-50", link: "/dashboard/fees", action: true },
+          { title: "Mock Tests", value: examCount, icon: BookOpenCheck, color: "text-rose-600", bg: "bg-rose-50", link: "/dashboard/exams" },
         ].map((item, idx) => (
-          <Link key={idx} href={item.link} className={`group flex flex-col justify-between bg-white border border-slate-200 rounded-[2rem] p-6 shadow-sm hover:shadow-xl ${item.shadowHover} ${item.borderHover} transition-all duration-500 hover:-translate-y-1`}>
-            <div className="flex items-start justify-between mb-8">
-              <div className={`h-14 w-14 ${item.bg} rounded-2xl flex items-center justify-center ${item.color} group-hover:scale-110 group-hover:rotate-6 transition-transform duration-500 shadow-inner`}>
-                <item.icon className="h-7 w-7" />
+          <Link key={idx} href={item.link} className="group bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all">
+            <div className="flex items-start justify-between mb-4">
+              <div className={`h-10 w-10 ${item.bg} rounded-xl flex items-center justify-center ${item.color}`}>
+                <item.icon className="h-5 w-5" />
               </div>
-              {item.badge ? (
-                <span className={`text-[10px] font-black ${item.color} ${item.bg} px-2.5 py-1 rounded-md border border-current/10 uppercase tracking-widest`}>
-                  {item.badge}
-                </span>
-              ) : (
-                <ArrowRight className="h-5 w-5 text-slate-200 group-hover:text-slate-400 group-hover:translate-x-1.5 transition-all duration-300" />
-              )}
+              <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all" />
             </div>
             <div>
-              <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5 group-hover:text-slate-500 transition-colors">{item.title}</p>
-              <p className={`text-3xl font-black text-slate-900 tracking-tight ${item.hoverIcon} transition-colors duration-300`}>{item.value}</p>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{item.title}</p>
+              <p className={`text-2xl font-black tracking-tight ${item.action ? 'text-slate-400' : 'text-slate-900'}`}>
+                {item.value}
+              </p>
             </div>
           </Link>
         ))}
       </div>
 
-      {/* 4. FOOTER GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 pt-2">
-        
-        {/* Trust Banner */}
-        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-[2rem] p-6 md:p-8 flex flex-col sm:flex-row items-center sm:items-start gap-6 shadow-sm hover:shadow-md transition-shadow group">
-          <div className="h-16 w-16 bg-emerald-50 rounded-full border border-emerald-100 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-500">
-            <ShieldCheck className="h-8 w-8 text-emerald-500" />
+      {/* 3. THE STUDENT PORTAL MANAGER (Clean, highly actionable) */}
+      <div className="bg-white border border-indigo-100 rounded-3xl p-1 shadow-sm overflow-hidden">
+        <div className="bg-indigo-50/50 rounded-[1.35rem] p-6 md:p-8 flex flex-col lg:flex-row items-center justify-between gap-8 border border-indigo-50/50">
+          
+          <div className="flex-1 text-center lg:text-left">
+            <div className="inline-flex items-center gap-1.5 bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+              </span>
+              Portal Live
+            </div>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2">
+              Your Student App Gateway
+            </h2>
+            <p className="text-slate-600 text-sm max-w-lg font-medium leading-relaxed">
+              Share this exact link on your WhatsApp groups. Students use their secure PIN to log in, view their attendance, download your notes, and check mock test results.
+            </p>
           </div>
-          <div className="text-center sm:text-left">
-            <h3 className="font-black text-lg text-slate-900 mb-2">Military-Grade Data Privacy</h3>
-            <p className="text-slate-500 text-sm leading-relaxed font-medium">
-              Your student data is strictly isolated. The portal guarantees that no student can ever view another student's test marks, attendance, or personal details.
+
+          <div className="w-full lg:w-auto bg-white p-5 rounded-2xl border border-slate-200 shadow-sm lg:min-w-[400px]">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+              <Share2 className="h-3.5 w-3.5" /> Portal Link
+            </p>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="flex-1 bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl overflow-hidden">
+                <code className="text-slate-800 text-sm font-semibold truncate block w-full select-all">
+                  {portalUrl}
+                </code>
+              </div>
+              <a href={portalUrl} target="_blank" rel="noreferrer" className="shrink-0 bg-slate-100 text-slate-600 p-3 rounded-xl hover:bg-indigo-50 hover:text-indigo-600 transition-colors" title="Open Portal">
+                <ExternalLink className="h-4 w-4" />
+              </a>
+            </div>
+            <CopyButton url={portalUrl} />
+          </div>
+          
+        </div>
+      </div>
+
+      {/* 4. UTILITY CARDS */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        
+        {/* Security Assurance */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 flex items-start gap-4 shadow-sm">
+          <div className="h-12 w-12 bg-emerald-50 rounded-xl flex items-center justify-center shrink-0">
+            <ShieldCheck className="h-6 w-6 text-emerald-600" />
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-900 mb-1">Data Isolation Guard</h3>
+            <p className="text-slate-500 text-sm leading-relaxed">
+              Your data is cryptographically isolated. Students can never access other students' marks or records.
             </p>
           </div>
         </div>
 
-        {/* Upgrade/Growth Card - Premium "Credit Card" Look */}
-        <Link href="/dashboard/billing" className="group relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-[2rem] p-6 md:p-8 flex flex-col justify-between shadow-lg hover:shadow-2xl hover:shadow-amber-500/20 transition-all duration-500 overflow-hidden hover:-translate-y-1">
-          {/* Shimmer effect */}
-          <div className="absolute inset-0 translate-x-[-100%] group-hover:animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/5 to-transparent pointer-events-none"></div>
-          
-          <div className="relative z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-amber-400/10 text-amber-400 rounded-full text-xs font-black uppercase tracking-widest mb-5 border border-amber-400/20 group-hover:bg-amber-400/20 transition-colors">
-              <TrendingUp className="h-4 w-4" /> Go Pro
+        {/* Growth/Pro */}
+        <Link href="/dashboard/billing" className="group bg-slate-900 rounded-2xl p-6 flex items-start justify-between gap-4 shadow-sm hover:shadow-lg transition-all hover:bg-slate-800">
+          <div>
+            <div className="inline-flex items-center gap-1.5 text-amber-400 text-xs font-bold uppercase tracking-widest mb-2">
+              <TrendingUp className="h-3.5 w-3.5" /> Upgrade Available
             </div>
-            <h3 className="font-black text-white text-xl mb-2 leading-snug">Automate WhatsApp Reminders</h3>
+            <h3 className="font-bold text-white mb-1">Automate WhatsApp</h3>
+            <p className="text-slate-400 text-sm leading-relaxed">
+              Send automated fee reminders and attendance reports directly to parents.
+            </p>
           </div>
-          <div className="mt-6 flex items-center justify-between w-full text-indigo-300 font-bold text-sm relative z-10">
-            <span>View Pricing</span>
-            <ArrowRight className="h-5 w-5 group-hover:translate-x-2 transition-transform duration-300 text-amber-400" />
-          </div>
+          <ArrowRight className="h-5 w-5 text-slate-500 group-hover:text-white group-hover:translate-x-1 transition-all shrink-0 mt-1" />
         </Link>
 
       </div>
