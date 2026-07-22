@@ -63,29 +63,65 @@ export default async function FullPotentialDashboard() {
         </div>
       </div>
 
-      {/* 2. MINIMALIST METRICS GRID */}
+      {/* 2. ADVANCED METRICS GRID (The Deep UX Fix) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { title: "Active Students", value: studentCount, icon: Users, color: "text-indigo-600", bg: "bg-indigo-50", link: "/dashboard/students" },
-          { title: "Today's Attendance", value: "Mark Now", icon: CalendarCheck, color: "text-emerald-600", bg: "bg-emerald-50", link: "/dashboard/attendance", action: true },
-          { title: "Fee Dues", value: "Check", icon: Wallet, color: "text-amber-600", bg: "bg-amber-50", link: "/dashboard/fees", action: true },
-          { title: "Mock Tests", value: examCount, icon: BookOpenCheck, color: "text-rose-600", bg: "bg-rose-50", link: "/dashboard/exams" },
-        ].map((item, idx) => (
-          <Link key={idx} href={item.link} className="group bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all">
-            <div className="flex items-start justify-between mb-4">
-              <div className={`h-10 w-10 ${item.bg} rounded-xl flex items-center justify-center ${item.color}`}>
-                <item.icon className="h-5 w-5" />
+          { 
+            title: "Active Students", value: studentCount, isAction: false, 
+            icon: Users, theme: "indigo", link: "/dashboard/students" 
+          },
+          { 
+            title: "Today's Attendance", value: "Action Required", isAction: true, 
+            icon: CalendarCheck, theme: "emerald", link: "/dashboard/attendance" 
+          },
+          { 
+            title: "Fee Dues", value: "Review Pending", isAction: true, 
+            icon: Wallet, theme: "amber", link: "/dashboard/fees" 
+          },
+          { 
+            title: "Mock Tests", value: examCount, isAction: false, 
+            icon: BookOpenCheck, theme: "rose", link: "/dashboard/exams" 
+          },
+        ].map((item, idx) => {
+          // Dynamic theme compiler for insane visual polish
+          const themes: Record<string, any> = {
+            indigo: { iconBg: "bg-indigo-50 text-indigo-600", hover: "hover:border-indigo-300" },
+            emerald: { iconBg: "bg-emerald-50 text-emerald-600", hover: "hover:border-emerald-300", badge: "bg-emerald-50 text-emerald-700 group-hover:bg-emerald-500 group-hover:text-white border-emerald-200", dot: "bg-emerald-500 group-hover:bg-white" },
+            amber: { iconBg: "bg-amber-50 text-amber-600", hover: "hover:border-amber-300", badge: "bg-amber-50 text-amber-700 group-hover:bg-amber-500 group-hover:text-white border-amber-200", dot: "bg-amber-500 group-hover:bg-white" },
+            rose: { iconBg: "bg-rose-50 text-rose-600", hover: "hover:border-rose-300" },
+          };
+          const style = themes[item.theme];
+
+          return (
+            <Link key={idx} href={item.link} className={`group bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-300 ${style.hover} flex flex-col justify-between min-h-[140px]`}>
+              <div className="flex items-start justify-between mb-4">
+                <div className={`h-10 w-10 ${style.iconBg} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                  <item.icon className="h-5 w-5" />
+                </div>
+                <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-slate-600 group-hover:translate-x-1 transition-all duration-300" />
               </div>
-              <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{item.title}</p>
-              <p className={`text-2xl font-black tracking-tight ${item.action ? 'text-slate-400' : 'text-slate-900'}`}>
-                {item.value}
-              </p>
-            </div>
-          </Link>
-        ))}
+              
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">{item.title}</p>
+                
+                {/* 🔥 THE MAGIC SPLIT: Render big numbers for stats, animated buttons for actions */}
+                {item.isAction ? (
+                  <div className={`inline-flex items-center gap-2 mt-1 px-3 py-1.5 rounded-lg border text-xs font-black uppercase tracking-wide transition-all duration-300 ${style.badge}`}>
+                    <span className="relative flex h-2 w-2">
+                      <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${style.dot}`}></span>
+                      <span className={`relative inline-flex rounded-full h-2 w-2 ${style.dot}`}></span>
+                    </span>
+                    {item.value}
+                  </div>
+                ) : (
+                  <p className="text-3xl font-black tracking-tight text-slate-900 group-hover:scale-[1.02] origin-left transition-transform duration-300">
+                    {item.value}
+                  </p>
+                )}
+              </div>
+            </Link>
+          );
+        })}
       </div>
 
       {/* 3. THE STUDENT PORTAL MANAGER (Clean, highly actionable) */}
@@ -132,7 +168,7 @@ export default async function FullPotentialDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         
         {/* Security Assurance */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 flex items-start gap-4 shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 flex items-start gap-4 shadow-sm hover:shadow-md transition-shadow">
           <div className="h-12 w-12 bg-emerald-50 rounded-xl flex items-center justify-center shrink-0">
             <ShieldCheck className="h-6 w-6 text-emerald-600" />
           </div>
@@ -145,7 +181,7 @@ export default async function FullPotentialDashboard() {
         </div>
 
         {/* Growth/Pro */}
-        <Link href="/dashboard/billing" className="group bg-slate-900 rounded-2xl p-6 flex items-start justify-between gap-4 shadow-sm hover:shadow-lg transition-all hover:bg-slate-800">
+        <Link href="/dashboard/billing" className="group bg-slate-900 rounded-2xl p-6 flex items-start justify-between gap-4 shadow-sm hover:shadow-xl hover:shadow-slate-900/20 transition-all hover:bg-slate-800">
           <div>
             <div className="inline-flex items-center gap-1.5 text-amber-400 text-xs font-bold uppercase tracking-widest mb-2">
               <TrendingUp className="h-3.5 w-3.5" /> Upgrade Available
