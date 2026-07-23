@@ -1,34 +1,40 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { redirect } from "next/navigation";
 
-export async function createInstitute(formData: FormData) {
+export async function createInstituteAction(formData: FormData) {
   const supabase = await createClient();
+  
   const name = formData.get("institute_name") as string;
+  const examsTaught = formData.get("exams_taught") as string; 
+  const studentScale = formData.get("student_scale") as string;
+  const primaryPainPoint = formData.get("primary_pain_point") as string;
 
   // 1. Authenticate the exact user
   const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) throw new Error("Unauthorized");
-
-  // 2. Insert the row and let the Database start the timer
-  const { error: insertError } = await supabase
-    .from("institutes")
-    .insert({
-      owner_id: user.id,
-      name: name,
-      onboarding_completed: true,
-      subscription_status: 'trialing'
-      // 🔥 THE DEEP SECRET: Notice we DO NOT send "trial_ends_at" here. 
-      // By leaving it blank, the Supabase server calculates NOW() + 7 Days 
-      // down to the exact millisecond they clicked the "Submit" button.
-    });
-
-  if (insertError) {
-    console.error(insertError);
-    throw new Error("Failed to create workspace.");
+  if (authError || !user) {
+    return { error: "Authentication failed. Please sign in again." };
   }
 
-  // 3. Send them to the dashboard, where TrialGuard immediately kicks in
-  redirect("/dashboard");
+  // 2. Insert/Update the row securely on the backend
+  const { error: dbError } = await supabase
+    .from("institutes")
+    .upsert({
+      owner_id: user.id,
+      name: name,
+      exams_taught: examsTaught ? JSON.parse(examsTaught) : [],
+      student_scale: studentScale,
+      primary_pain_point: primaryPainPoint,
+      onboarding_completed: true,
+      subscription_status: 'trialing',
+      phone_number: user.phone || "NOT_PROVIDED"
+    }, { onConflict: 'owner_id' });
+
+  if (dbError) {
+    console.error("Database Error:", dbError);
+    return { error: dbError.message };
+  }
+
+  // 3. Return success so the Client UI can finish its loading animation
+  return { success: true };
 }
