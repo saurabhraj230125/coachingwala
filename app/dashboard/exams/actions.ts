@@ -7,12 +7,9 @@ export async function publishExamAction(formData: FormData) {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-  if (authError || !user) {
-    return { error: "Authentication failed. Please sign in." };
-  }
+  if (authError || !user) return { error: "Authentication failed. Please sign in." };
 
   try {
-    // 1. Extract and Parse Data
     const title = formData.get("title") as string;
     const target = formData.get("batch_target") as string;
     const duration = formData.get("duration") as string;
@@ -20,7 +17,6 @@ export async function publishExamAction(formData: FormData) {
     const questionsData = formData.get("questions_data") as string; 
     const configData = formData.get("config_data") as string; 
 
-    // 2. Authenticate Institute
     const { data: institute, error: instError } = await supabase
       .from("institutes")
       .select("id")
@@ -29,7 +25,6 @@ export async function publishExamAction(formData: FormData) {
 
     if (instError || !institute) return { error: "Institute workspace not found." };
 
-    // 3. Create the Master Exam Record
     const { data: exam, error: examError } = await supabase.from("exams").insert({
       institute_id: institute.id,
       title: title || "Untitled Exam",
@@ -41,15 +36,10 @@ export async function publishExamAction(formData: FormData) {
       advanced_config: configData ? JSON.parse(configData) : {}
     }).select().single();
 
-    if (examError || !exam) {
-      console.error("Exam Insert Error:", examError);
-      return { error: "Failed to create master exam record." };
-    }
+    if (examError || !exam) return { error: "Failed to create master exam record." };
 
-    // 4. Insert Questions (Safely mapped to existing columns)
     if (examType === 'cbt' && questionsData) {
       const questions = JSON.parse(questionsData);
-      
       const questionInserts = questions.map((q: any) => ({
         exam_id: exam.id,
         question_text: q.q_text,
@@ -61,13 +51,9 @@ export async function publishExamAction(formData: FormData) {
       }));
       
       const { error: qError } = await supabase.from("exam_questions").insert(questionInserts);
-      if (qError) {
-        console.error("Questions Insert Error:", qError);
-        return { error: "Exam created, but questions failed to save." };
-      }
+      if (qError) return { error: "Exam created, but questions failed to save." };
     }
 
-    // 5. Success & Revalidate
     revalidatePath("/dashboard/exams");
     return { success: true };
 

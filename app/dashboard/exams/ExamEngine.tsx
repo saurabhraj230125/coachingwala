@@ -4,8 +4,10 @@ import { useState } from "react";
 import { publishExamAction } from "./actions";
 import { 
   Plus, CheckCircle2, Loader2, LayoutDashboard, 
-  Settings, MonitorSmartphone, Target, Clock, ShieldCheck, 
-  Send, ChevronRight, FileText, Activity, AlertTriangle
+  Settings, Target, Clock, ShieldCheck, 
+  Send, FileText, Activity, AlertTriangle, HelpCircle,
+  GripVertical, Bold, Italic, Type, Sigma, Image as ImageIcon,
+  ChevronRight, AlignLeft, Info
 } from "lucide-react";
 
 type ViewState = 'dashboard' | 'wizard';
@@ -16,10 +18,10 @@ export default function ExamEngine() {
   const [wizardStep, setWizardStep] = useState<WizardStep>(1);
   const [isPublishing, setIsPublishing] = useState(false);
 
-  // --- CENTRALIZED FORM STATE ---
+  // 🔥 CRITICAL FIX: Default changed to "All Batches" to sync with Student Portal
   const [basicDetails, setBasicDetails] = useState({
     title: "",
-    targetBatch: "Target JEE 2027",
+    targetBatch: "All Batches", 
     examType: "cbt"
   });
 
@@ -27,21 +29,21 @@ export default function ExamEngine() {
     duration: 180,
     maxMarks: 300,
     shuffleQuestions: true,
-    antiTabSwitch: true
+    antiTabSwitch: true,
+    calculator: false,
+    autoSubmit: true
   });
 
   const [questions, setQuestions] = useState([
-    { id: 1, q_text: "", opt_a: "", opt_b: "", opt_c: "", opt_d: "", correct: "A" }
+    { id: 1, section: "Physics", q_text: "", opt_a: "", opt_b: "", opt_c: "", opt_d: "", correct: "A", marks: 4, negative: 1 }
   ]);
 
-  // --- ACTION HANDLER ---
   const executePublish = async () => {
     if (!basicDetails.title) {
       alert("Please provide an Exam Title in Step 1.");
       setWizardStep(1);
       return;
     }
-
     setIsPublishing(true);
     
     try {
@@ -60,12 +62,11 @@ export default function ExamEngine() {
         return;
       }
 
-      // Reset & Return to Dashboard
       setView('dashboard');
       setWizardStep(1);
-      setBasicDetails({ title: "", targetBatch: "Target JEE 2027", examType: "cbt" });
-      setQuestions([{ id: 1, q_text: "", opt_a: "", opt_b: "", opt_c: "", opt_d: "", correct: "A" }]);
-      alert("Exam successfully deployed!");
+      // 🔥 CRITICAL FIX: Reset back to "All Batches"
+      setBasicDetails({ title: "", targetBatch: "All Batches", examType: "cbt" });
+      setQuestions([{ id: 1, section: "Physics", q_text: "", opt_a: "", opt_b: "", opt_c: "", opt_d: "", correct: "A", marks: 4, negative: 1 }]);
       
     } catch (error) {
       alert("Network or Server error. Please try again.");
@@ -74,39 +75,41 @@ export default function ExamEngine() {
     }
   };
 
-  // --- SUB-COMPONENTS ---
   const WizardHeader = () => (
-    <div className="bg-white border-b border-slate-200 px-8 py-4 sticky top-0 z-50 flex items-center justify-between shadow-sm">
+    <div className="bg-white border-b border-slate-200 px-6 py-3 sticky top-0 z-50 flex items-center justify-between shadow-sm">
       <div className="flex items-center gap-6">
-        <button onClick={() => setView('dashboard')} className="text-sm font-black text-slate-400 hover:text-rose-600 transition-colors">
+        <button onClick={() => setView('dashboard')} className="text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-1">
           Exit Studio
         </button>
-        <div className="flex items-center gap-2">
-          {[1, 2, 3, 4, 5].map((s) => (
-            <div key={s} className="flex items-center gap-2">
-              <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-black transition-colors ${
-                wizardStep === s ? 'bg-indigo-600 text-white shadow-md' : 
-                wizardStep > s ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'
-              }`}>
-                {wizardStep > s ? <CheckCircle2 className="h-4 w-4" /> : s}
+        <div className="h-4 w-px bg-slate-200"></div>
+        <div className="flex items-center gap-3">
+          {['Basic Setup', 'Configuration', 'Question Builder', 'NTA Preview', 'Publish Exam'].map((label, i) => {
+            const stepNum = (i + 1) as WizardStep;
+            const isActive = wizardStep === stepNum;
+            const isPast = wizardStep > stepNum;
+            return (
+              <div key={stepNum} className="flex items-center gap-3">
+                <div className={`flex items-center gap-2 text-xs font-bold transition-colors cursor-pointer ${isActive ? 'text-indigo-600' : isPast ? 'text-slate-700' : 'text-slate-400'}`} onClick={() => setWizardStep(stepNum)}>
+                  <div className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] ${isActive ? 'bg-indigo-600 text-white' : isPast ? 'bg-emerald-500 text-white' : 'bg-slate-100 border border-slate-200 text-slate-400'}`}>
+                    {isPast ? <CheckCircle2 className="h-3 w-3" /> : stepNum}
+                  </div>
+                  <span className="hidden md:block">{label}</span>
+                </div>
+                {stepNum < 5 && <ChevronRight className="h-4 w-4 text-slate-300" />}
               </div>
-              {s < 5 && <div className={`h-1 w-8 rounded-full ${wizardStep > s ? 'bg-emerald-500' : 'bg-slate-100'}`}></div>}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
       
-      <div className="flex items-center gap-4">
-        <button onClick={() => setWizardStep(prev => Math.max(1, prev - 1) as WizardStep)} disabled={wizardStep === 1} className="px-4 py-2 text-sm font-bold text-slate-600 disabled:opacity-30">
-          Previous
-        </button>
+      <div className="flex items-center gap-3">
         {wizardStep < 5 ? (
-          <button onClick={() => setWizardStep(prev => Math.min(5, prev + 1) as WizardStep)} className="px-6 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-all active:scale-95 shadow-md">
-            Next Step
+          <button onClick={() => setWizardStep(prev => Math.min(5, prev + 1) as WizardStep)} className="px-5 py-2 bg-slate-900 text-white rounded-md font-bold text-xs hover:bg-slate-800 transition-all active:scale-95 shadow-sm">
+            Save & Next Step
           </button>
         ) : (
-          <button onClick={executePublish} disabled={isPublishing} className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all active:scale-95 shadow-md shadow-indigo-600/20 flex items-center gap-2">
-            {isPublishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Publish Exam
+          <button onClick={executePublish} disabled={isPublishing} className="px-5 py-2 bg-indigo-600 text-white rounded-md font-bold text-xs hover:bg-indigo-700 transition-all active:scale-95 shadow-sm flex items-center gap-2">
+            {isPublishing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />} Deploy Examination
           </button>
         )}
       </div>
@@ -114,60 +117,86 @@ export default function ExamEngine() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 flex font-sans selection:bg-indigo-200">
+    <div className="min-h-screen bg-slate-50 flex font-sans text-slate-900 selection:bg-indigo-100">
       
-      {/* SIDEBAR NAVIGATION */}
-      <div className="w-64 bg-slate-900 min-h-screen text-slate-400 flex flex-col shrink-0">
-        <div className="p-6 mb-4">
-          <div className="h-10 w-10 bg-indigo-500 rounded-xl flex items-center justify-center text-white font-black text-xl mb-4 shadow-lg shadow-indigo-500/20">CQ</div>
-          <h2 className="text-xs font-black uppercase tracking-widest text-slate-500">Exam Center</h2>
+      <div className="w-60 bg-[#1e2329] min-h-screen text-slate-400 flex flex-col shrink-0 border-r border-slate-800">
+        <div className="p-5 border-b border-white/5 flex items-center gap-3">
+          <div className="h-8 w-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-black text-sm shadow-lg">FQ</div>
+          <div>
+            <h2 className="text-xs font-black text-white tracking-wide">FutureQ Academy</h2>
+            <p className="text-[10px] uppercase tracking-widest text-slate-500">Exam OS</p>
+          </div>
         </div>
-        <div className="flex-1 px-4 space-y-1">
-          <button onClick={() => setView('dashboard')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl font-bold text-sm transition-all ${view === 'dashboard' ? 'bg-indigo-500 text-white shadow-md' : 'hover:bg-slate-800 hover:text-slate-200'}`}>
+        <div className="flex-1 py-4 space-y-1 px-3">
+          <button onClick={() => setView('dashboard')} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md font-medium text-sm transition-all ${view === 'dashboard' ? 'bg-indigo-500/10 text-indigo-400' : 'hover:bg-white/5 hover:text-slate-200'}`}>
             <LayoutDashboard className="h-4 w-4" /> Dashboard
           </button>
-          <button className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl font-bold text-sm hover:bg-slate-800 hover:text-slate-200 transition-all">
+          <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md font-medium text-sm hover:bg-white/5 hover:text-slate-200 transition-all">
             <Activity className="h-4 w-4" /> Live Monitoring
+          </button>
+          <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md font-medium text-sm hover:bg-white/5 hover:text-slate-200 transition-all">
+            <FileText className="h-4 w-4" /> Question Bank
           </button>
         </div>
       </div>
       
-      {/* MAIN CONTENT AREA */}
       {view === 'dashboard' ? (
-        // --- DASHBOARD VIEW ---
-        <div className="p-8 flex-1 overflow-y-auto animate-in fade-in duration-500">
-          <div className="flex justify-between items-start mb-10">
+        <div className="p-8 flex-1 overflow-y-auto bg-slate-50/50">
+          <div className="flex justify-between items-end mb-8">
             <div>
-              <h1 className="text-3xl font-black text-slate-900 tracking-tight">Exam Dashboard</h1>
-              <p className="text-sm font-medium text-slate-500 mt-1">Manage tests, monitor live activity, and review results.</p>
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight">Exam Dashboard</h1>
+              <p className="text-xs font-medium text-slate-500 mt-1">Manage tests, monitor live activity, and review results.</p>
             </div>
-            <button onClick={() => { setView('wizard'); setWizardStep(1); }} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3.5 rounded-2xl font-black text-sm transition-all active:scale-95 shadow-xl shadow-indigo-600/20">
-              <Plus className="h-5 w-5" /> Create New Examination
+            <button onClick={() => { setView('wizard'); setWizardStep(1); }} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-md font-bold text-xs transition-all shadow-sm">
+              <Plus className="h-4 w-4" /> Create New Examination
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
-            <div className="bg-white border border-slate-200 rounded-[1.5rem] p-6 shadow-sm">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Total Exams</p>
-              <h2 className="text-4xl font-black text-slate-900">84</h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            {[{label: "Total Exams", val: "84", sub: "+8 this month"}, {label: "Students Attempted", val: "4,281", sub: "91% Completion Rate"}, {label: "Average Score", val: "142/300", sub: "Stable"}, {label: "Cheating Alerts", val: "2", sub: "Needs Review", alert: true}].map((metric, i) => (
+              <div key={i} className={`bg-white border ${metric.alert ? 'border-rose-200' : 'border-slate-200'} rounded-xl p-5 shadow-sm`}>
+                <p className={`text-[10px] font-bold uppercase tracking-widest ${metric.alert ? 'text-rose-500' : 'text-slate-500'} mb-2`}>{metric.label}</p>
+                <h2 className={`text-3xl font-black ${metric.alert ? 'text-rose-600' : 'text-slate-900'} mb-1`}>{metric.val}</h2>
+                <p className="text-xs font-medium text-slate-400">{metric.sub}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+              <h3 className="text-sm font-bold text-slate-900">Active & Upcoming</h3>
             </div>
-            <div className="bg-white border border-slate-200 rounded-[1.5rem] p-6 shadow-sm">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Students Attempted</p>
-              <h2 className="text-4xl font-black text-slate-900">4,281</h2>
-            </div>
-            <div className="bg-white border border-slate-200 rounded-[1.5rem] p-6 shadow-sm">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Average Score</p>
-              <h2 className="text-4xl font-black text-slate-900">142<span className="text-xl text-slate-400">/300</span></h2>
-            </div>
-            <div className="bg-rose-50 border border-rose-200 rounded-[1.5rem] p-6 shadow-sm">
-              <p className="text-[10px] font-black uppercase tracking-widest text-rose-500 mb-2 flex items-center gap-1"><AlertTriangle className="h-3 w-3"/> Active Alerts</p>
-              <h2 className="text-4xl font-black text-rose-700">2</h2>
-            </div>
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-slate-100">
+                  <th className="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-white">Exam Name</th>
+                  <th className="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-white">Target</th>
+                  <th className="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-white">Status</th>
+                  <th className="px-5 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-white text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-sm">
+                <tr className="hover:bg-slate-50 transition-colors">
+                  <td className="px-5 py-4">
+                    <p className="font-bold text-slate-900">Physics Full Test 03</p>
+                    <p className="text-xs text-slate-500 mt-0.5">PHY-FT-03 • 180 Mins</p>
+                  </td>
+                  <td className="px-5 py-4 font-medium text-slate-700">Target JEE 2027</td>
+                  <td className="px-5 py-4">
+                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-widest border border-emerald-200">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Live Now
+                    </span>
+                  </td>
+                  <td className="px-5 py-4 text-right">
+                    <button className="text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-3 py-1.5 rounded border border-indigo-100 transition-colors">Monitor Live</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       ) : (
-        // --- CREATION WIZARD VIEW ---
-        <div className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50">
+        <div className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50/50">
           <WizardHeader />
           
           <div className="flex-1 overflow-y-auto p-8">
@@ -175,30 +204,35 @@ export default function ExamEngine() {
               
               {/* STEP 1: Basic Details */}
               {wizardStep === 1 && (
-                <div className="animate-in slide-in-from-right-8 fade-in duration-500 space-y-6">
-                  <h2 className="text-3xl font-black text-slate-900 mb-6">Basic Information</h2>
-                  
-                  <div className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm space-y-6">
-                    <div className="space-y-2">
-                      <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Examination Title</label>
-                      <input type="text" placeholder="e.g. JEE Mains Full Syllabus 04" value={basicDetails.title} onChange={e => setBasicDetails({...basicDetails, title: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg font-bold text-slate-900 focus:bg-white focus:border-indigo-500 outline-none transition-all" />
+                <div className="animate-in fade-in duration-300">
+                  <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-100 bg-slate-50">
+                      <h2 className="text-base font-black text-slate-900">Basic Information</h2>
+                      <p className="text-xs text-slate-500 mt-0.5">Set up the foundation for this examination.</p>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="p-6 space-y-6">
                       <div className="space-y-2">
-                        <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Target Batch</label>
-                        <select value={basicDetails.targetBatch} onChange={e => setBasicDetails({...basicDetails, targetBatch: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 outline-none appearance-none cursor-pointer">
-                          <option>Target JEE 2027</option>
-                          <option>Target NEET 2027</option>
-                          <option>Foundation Class 10</option>
-                        </select>
+                        <label className="text-xs font-bold text-slate-700">Examination Title</label>
+                        <input type="text" placeholder="e.g. Physics Sectional Mock 01" value={basicDetails.title} onChange={e => setBasicDetails({...basicDetails, title: e.target.value})} className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm font-medium text-slate-900 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-400" />
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Exam Mode</label>
-                        <select value={basicDetails.examType} onChange={e => setBasicDetails({...basicDetails, examType: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 outline-none appearance-none cursor-pointer">
-                          <option value="cbt">Digital CBT (Computer Based)</option>
-                          <option value="pdf">PDF Upload Mode</option>
-                        </select>
+
+                      <div className="grid grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-slate-700">Target Batch</label>
+                          {/* 🔥 CRITICAL FIX: Dropdown mapped accurately */}
+                          <select value={basicDetails.targetBatch} onChange={e => setBasicDetails({...basicDetails, targetBatch: e.target.value})} className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm font-medium text-slate-900 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all cursor-pointer">
+                            <option value="All Batches">All Batches (Global Exam)</option>
+                            <option value="Target JEE 2027">Target JEE 2027</option>
+                            <option value="Bokaro Offline Center">Bokaro Offline Center</option>
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-slate-700">Exam Format</label>
+                          <select value={basicDetails.examType} onChange={e => setBasicDetails({...basicDetails, examType: e.target.value})} className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-sm font-medium text-slate-900 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all cursor-pointer">
+                            <option value="cbt">Digital CBT (Computer Based Test)</option>
+                            <option value="pdf">PDF Practice Paper</option>
+                          </select>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -207,38 +241,45 @@ export default function ExamEngine() {
 
               {/* STEP 2: Configuration */}
               {wizardStep === 2 && (
-                <div className="animate-in slide-in-from-right-8 fade-in duration-500 space-y-6">
-                  <h2 className="text-3xl font-black text-slate-900 mb-6">Test Configuration</h2>
-                  
-                  <div className="grid grid-cols-2 gap-6 mb-6">
-                    <div className="bg-white border border-slate-200 rounded-[2rem] p-6 shadow-sm flex items-center justify-between">
-                      <div>
-                        <Clock className="h-5 w-5 text-indigo-500 mb-2" />
-                        <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1">Duration (Mins)</p>
-                      </div>
-                      <input type="number" value={examConfig.duration} onChange={e => setExamConfig({...examConfig, duration: parseInt(e.target.value)})} className="w-24 text-right text-3xl font-black text-slate-900 bg-transparent border-b-2 border-slate-200 focus:border-indigo-500 outline-none" />
+                <div className="animate-in fade-in duration-300 space-y-6">
+                  <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-100 bg-slate-50">
+                      <h2 className="text-base font-black text-slate-900">Exam Parameters</h2>
                     </div>
-                    <div className="bg-white border border-slate-200 rounded-[2rem] p-6 shadow-sm flex items-center justify-between">
-                      <div>
-                        <Target className="h-5 w-5 text-indigo-500 mb-2" />
-                        <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1">Max Marks</p>
+                    <div className="p-6 grid grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-700">Total Duration (Minutes)</label>
+                        <div className="relative">
+                          <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                          <input type="number" value={examConfig.duration} onChange={e => setExamConfig({...examConfig, duration: parseInt(e.target.value)})} className="w-full bg-white border border-slate-300 rounded-md pl-9 pr-3 py-2 text-sm font-medium focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none" />
+                        </div>
                       </div>
-                      <input type="number" value={examConfig.maxMarks} onChange={e => setExamConfig({...examConfig, maxMarks: parseInt(e.target.value)})} className="w-24 text-right text-3xl font-black text-slate-900 bg-transparent border-b-2 border-slate-200 focus:border-indigo-500 outline-none" />
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-700">Maximum Marks</label>
+                        <div className="relative">
+                          <Target className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                          <input type="number" value={examConfig.maxMarks} onChange={e => setExamConfig({...examConfig, maxMarks: parseInt(e.target.value)})} className="w-full bg-white border border-slate-300 rounded-md pl-9 pr-3 py-2 text-sm font-medium focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none" />
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm">
-                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 mb-6 flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-emerald-500"/> Security & Integrity Controls</h3>
-                    <div className="grid grid-cols-2 gap-y-6 gap-x-4">
+                  <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-100 bg-slate-50">
+                      <h2 className="text-base font-black text-slate-900 flex items-center gap-2">Security & Advanced Rules</h2>
+                    </div>
+                    <div className="p-6 grid grid-cols-2 gap-y-4 gap-x-8">
                       {[
-                        { id: 'shuffleQuestions', label: 'Shuffle Questions per student' },
-                        { id: 'antiTabSwitch', label: 'Enable Anti-Tab Switch Warnings' }
+                        { id: 'shuffleQuestions', label: 'Shuffle Questions' },
+                        { id: 'antiTabSwitch', label: 'Anti-Tab Switch Alert' },
+                        { id: 'calculator', label: 'Enable On-Screen Calculator' },
+                        { id: 'autoSubmit', label: 'Auto Submit on Timer End' }
                       ].map(setting => (
-                        <label key={setting.id} className="flex items-center gap-4 cursor-pointer group">
-                          <div className={`w-12 h-7 rounded-full p-1 transition-colors ${examConfig[setting.id as keyof typeof examConfig] ? 'bg-emerald-500' : 'bg-slate-200'}`}>
-                            <div className={`bg-white w-5 h-5 rounded-full shadow-sm transition-transform ${examConfig[setting.id as keyof typeof examConfig] ? 'translate-x-5' : 'translate-x-0'}`}></div>
+                        <label key={setting.id} className="flex items-center gap-3 cursor-pointer group">
+                          <div className={`w-9 h-5 rounded-full p-0.5 transition-colors ${examConfig[setting.id as keyof typeof examConfig] ? 'bg-indigo-600' : 'bg-slate-300'}`}>
+                            <div className={`bg-white w-4 h-4 rounded-full shadow-sm transition-transform ${examConfig[setting.id as keyof typeof examConfig] ? 'translate-x-4' : 'translate-x-0'}`}></div>
                           </div>
-                          <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900">{setting.label}</span>
+                          <span className="text-sm font-medium text-slate-700">{setting.label}</span>
                         </label>
                       ))}
                     </div>
@@ -248,138 +289,104 @@ export default function ExamEngine() {
 
               {/* STEP 3: Question Builder */}
               {wizardStep === 3 && (
-                <div className="animate-in slide-in-from-right-8 fade-in duration-500 space-y-8">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-3xl font-black text-slate-900">Question Studio</h2>
-                    <span className="px-4 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-bold border border-indigo-100">{questions.length} Questions Drafted</span>
+                <div className="animate-in fade-in duration-300 flex gap-6 h-[calc(100vh-140px)]">
+                  <div className="w-64 bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col shrink-0 overflow-hidden">
+                    <div className="p-3 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                      <span className="text-xs font-bold text-slate-600">Question Navigator</span>
+                      <button className="text-indigo-600 p-1 hover:bg-indigo-50 rounded"><Plus className="h-4 w-4"/></button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                      {questions.map((q, i) => (
+                        <div key={q.id} className="bg-indigo-50 border border-indigo-200 text-indigo-700 p-2 rounded-md text-xs font-bold flex justify-between items-center cursor-pointer">
+                          <span>Q{i + 1}. {q.section}</span>
+                          <span className="bg-white px-1.5 py-0.5 rounded shadow-sm text-[10px] text-slate-500">MCQ</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
-                  {questions.map((q, index) => (
-                    <div key={q.id} className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm relative group hover:border-indigo-300 transition-colors">
-                      <div className="absolute -left-4 -top-4 h-12 w-12 bg-slate-900 text-white font-black rounded-2xl flex items-center justify-center shadow-lg text-lg">
-                        Q{index + 1}
+                  <div className="flex-1 bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col overflow-hidden">
+                    <div className="px-4 py-2 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <GripVertical className="h-4 w-4 text-slate-400 cursor-grab" />
+                        <h3 className="text-sm font-bold text-slate-800">Question 1</h3>
+                      </div>
+                      <div className="flex gap-2">
+                        <select className="text-xs border border-slate-300 rounded px-2 py-1 outline-none bg-white">
+                          <option>Physics</option><option>Chemistry</option><option>Maths</option>
+                        </select>
+                        <div className="flex items-center text-xs font-bold border border-slate-300 rounded px-2 py-1 bg-white divide-x divide-slate-200">
+                          <span className="text-emerald-600 pr-2">+4</span><span className="text-rose-500 pl-2">-1</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-6 bg-white">
+                      <div className="flex items-center gap-1 mb-2 border border-slate-200 bg-slate-50 p-1 rounded-md w-max">
+                        <button className="p-1.5 hover:bg-white rounded text-slate-600"><Bold className="h-3.5 w-3.5"/></button>
+                        <button className="p-1.5 hover:bg-white rounded text-slate-600"><Italic className="h-3.5 w-3.5"/></button>
+                        <div className="h-4 w-px bg-slate-300 mx-1"></div>
+                        <button className="p-1.5 hover:bg-white rounded text-slate-600"><Sigma className="h-3.5 w-3.5"/></button>
+                        <button className="p-1.5 hover:bg-white rounded text-slate-600"><ImageIcon className="h-3.5 w-3.5"/></button>
                       </div>
 
                       <textarea 
+                        value={questions[0].q_text}
+                        onChange={(e) => { const newQ = [...questions]; newQ[0].q_text = e.target.value; setQuestions(newQ); }}
                         placeholder="Type question statement here..."
-                        value={q.q_text}
-                        onChange={(e) => {
-                          const newQ = [...questions];
-                          newQ[index].q_text = e.target.value;
-                          setQuestions(newQ);
-                        }}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 min-h-[140px] text-base font-medium text-slate-900 focus:bg-white focus:border-indigo-500 outline-none transition-all resize-none mb-6" 
+                        className="w-full text-sm font-medium text-slate-800 border border-slate-300 rounded-md p-3 min-h-[120px] outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none mb-6"
                       />
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {(['A', 'B', 'C', 'D'] as const).map((opt) => (
-                          <div key={opt} className={`flex items-center border-2 rounded-2xl p-2.5 transition-all ${q.correct === opt ? 'bg-emerald-50/50 border-emerald-400' : 'bg-white border-slate-200 focus-within:border-indigo-400'}`}>
-                            <button
-                              onClick={() => {
-                                const newQ = [...questions];
-                                newQ[index].correct = opt;
-                                setQuestions(newQ);
-                              }}
-                              className={`h-10 w-10 shrink-0 rounded-xl flex items-center justify-center font-black mr-3 transition-colors ${q.correct === opt ? 'bg-emerald-500 text-white shadow-md' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
-                            >
+                      <div className="space-y-3">
+                        {(['A', 'B', 'C', 'D'] as const).map(opt => (
+                          <div key={opt} className={`flex items-start gap-3 p-2 border rounded-md transition-all ${questions[0].correct === opt ? 'border-emerald-400 bg-emerald-50/50' : 'border-slate-300 bg-white focus-within:border-indigo-500'}`}>
+                            <button onClick={() => { const newQ = [...questions]; newQ[0].correct = opt; setQuestions(newQ); }} className={`mt-0.5 shrink-0 h-6 w-6 rounded border flex items-center justify-center text-xs font-bold ${questions[0].correct === opt ? 'bg-emerald-500 border-emerald-600 text-white' : 'bg-slate-100 border-slate-300 text-slate-500 hover:bg-slate-200'}`}>
                               {opt}
                             </button>
                             <input 
                               placeholder={`Option ${opt}`}
-                              value={q[`opt_${opt.toLowerCase()}` as keyof typeof q] as string}
-                              onChange={(e) => {
-                                const newQ = [...questions];
-                                (newQ[index] as any)[`opt_${opt.toLowerCase()}`] = e.target.value;
-                                setQuestions(newQ);
-                              }}
-                              className="flex-1 outline-none font-bold text-sm text-slate-800 bg-transparent py-2"
+                              value={questions[0][`opt_${opt.toLowerCase()}` as keyof typeof questions[0]] as string}
+                              onChange={(e) => { const newQ = [...questions]; (newQ[0] as any)[`opt_${opt.toLowerCase()}`] = e.target.value; setQuestions(newQ); }}
+                              className="flex-1 outline-none text-sm text-slate-800 bg-transparent py-1"
                             />
                           </div>
                         ))}
                       </div>
                     </div>
-                  ))}
-
-                  <button 
-                    onClick={() => setQuestions([...questions, { id: Date.now(), q_text: "", opt_a: "", opt_b: "", opt_c: "", opt_d: "", correct: "A" }])}
-                    className="w-full py-6 border-2 border-dashed border-slate-300 rounded-[2rem] text-slate-500 font-black text-sm hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all flex items-center justify-center gap-2"
-                  >
-                    <Plus className="h-5 w-5" /> Add New Question
-                  </button>
+                  </div>
                 </div>
               )}
 
               {/* STEP 4: NTA Preview */}
               {wizardStep === 4 && (
-                <div className="animate-in slide-in-from-right-8 fade-in duration-500 space-y-6">
-                  <h2 className="text-3xl font-black text-slate-900 mb-6 text-center">Student Interface Preview</h2>
-                  
-                  {/* Highly Accurate NTA Simulator */}
-                  <div className="w-full max-w-4xl mx-auto bg-white border border-slate-300 shadow-2xl flex flex-col select-none rounded-xl overflow-hidden">
-                    
-                    {/* Top Bar */}
-                    <div className="bg-[#3b4a54] text-white flex justify-between items-center px-4 py-2.5">
-                      <span className="font-bold text-sm truncate">{basicDetails.title || "Advanced Practice Test"}</span>
-                      <div className="flex items-center gap-4 shrink-0">
-                        <span className="bg-white/10 px-3 py-1 rounded text-xs font-mono">Time Left: {examConfig.duration}:00</span>
-                        <span className="text-sm font-bold hidden sm:block">Student Name</span>
+                <div className="animate-in fade-in duration-300 flex flex-col items-center">
+                  <div className="w-full max-w-[1000px] border border-slate-300 shadow-2xl flex flex-col font-sans select-none bg-white relative h-[600px] text-sm overflow-hidden">
+                    <div className="bg-[#37474f] text-white flex justify-between items-center px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">{basicDetails.title || "Advanced Practice Test"}</span>
+                        <Info className="h-4 w-4 opacity-70" />
                       </div>
                     </div>
-
-                    <div className="flex border-b border-slate-200">
-                      <div className="px-6 py-2 text-sm text-blue-600 font-bold border-b-2 border-blue-600 bg-blue-50/50">Physics</div>
+                    <div className="bg-white border-b border-slate-200 flex items-center shadow-sm relative z-10">
+                      <span className="text-xs text-slate-600 px-4 py-2 border-r border-slate-200">Sections</span>
+                      <div className="flex">
+                        <div className="px-4 py-2.5 text-xs text-white bg-blue-600 font-medium flex items-center gap-1"><ChevronRight className="h-4 w-4"/> Physics <Info className="h-3 w-3 opacity-80"/></div>
+                      </div>
                     </div>
-
-                    <div className="flex flex-col sm:flex-row h-[500px]">
-                      {/* Question Area */}
-                      <div className="flex-1 p-6 overflow-y-auto flex flex-col">
-                        <div className="flex justify-between items-center mb-6 pb-3 border-b border-slate-200">
-                          <span className="font-black text-lg text-slate-800">Question 1</span>
-                          <div className="flex gap-4 text-xs font-bold text-slate-500">
-                            <span>MCQ</span>
-                            <span className="text-emerald-600 text-[10px] border border-emerald-200 px-2 py-0.5 rounded bg-emerald-50">+4</span>
-                            <span className="text-rose-500 text-[10px] border border-rose-200 px-2 py-0.5 rounded bg-rose-50">-1</span>
+                    <div className="flex flex-1 overflow-hidden">
+                      <div className="flex-1 flex flex-col border-r border-slate-300">
+                        <div className="px-6 py-3 border-b border-slate-200 flex justify-between items-center bg-white shadow-sm z-0">
+                          <div className="flex items-center gap-4 text-xs font-semibold text-slate-700">
+                            <span className="text-base text-slate-900 font-bold">Question 1</span>
+                            <span className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">Question Type: MCQ</span>
                           </div>
                         </div>
-                        <p className="text-base text-slate-900 font-medium mb-8 whitespace-pre-wrap leading-relaxed">
-                          {questions[0]?.q_text || "Question statement will appear here."}
-                        </p>
-                        
-                        <div className="space-y-3 mt-auto">
-                          {(['A', 'B', 'C', 'D'] as const).map(opt => (
-                            <div key={opt} className="flex items-center gap-3 p-3 border border-slate-200 rounded bg-slate-50">
-                              <div className="h-4 w-4 rounded-full border border-slate-400 bg-white"></div>
-                              <span className="text-sm font-medium text-slate-700">{questions[0]?.[`opt_${opt.toLowerCase()}` as keyof typeof questions[0]] || `Option ${opt}`}</span>
-                            </div>
-                          ))}
-                        </div>
-
-                        <div className="mt-8 pt-4 border-t border-slate-200 flex justify-between">
-                          <button className="px-4 py-2 border border-slate-300 text-slate-600 font-bold text-xs rounded bg-white hover:bg-slate-50">Mark for Review & Next</button>
-                          <button className="px-8 py-2 bg-blue-600 text-white font-bold text-xs rounded hover:bg-blue-700">Save & Next</button>
+                        <div className="flex-1 p-6 overflow-y-auto bg-white">
+                          <p className="text-base text-slate-900 mb-6 font-medium">{questions[0].q_text || "Preview Question"}</p>
                         </div>
                       </div>
-
-                      {/* Palette Side Panel */}
-                      <div className="w-full sm:w-[280px] bg-slate-50 border-l border-slate-200 flex flex-col shrink-0">
-                        <div className="p-4 grid grid-cols-2 gap-y-3 gap-x-2 text-[11px] font-bold text-slate-600 border-b border-slate-200 bg-white">
-                          <div className="flex items-center gap-2"><div className="w-6 h-6 bg-emerald-500 text-white flex items-center justify-center rounded-tl-md rounded-br-md">1</div> Answered</div>
-                          <div className="flex items-center gap-2"><div className="w-6 h-6 bg-rose-500 text-white flex items-center justify-center rounded-tl-md rounded-br-md">2</div> Not Answered</div>
-                        </div>
-                        <div className="bg-blue-500 text-white font-bold text-sm p-2 text-center shadow-sm">Physics</div>
-                        <div className="p-4 flex-1 overflow-y-auto">
-                          <p className="text-xs font-bold text-slate-500 mb-3">Choose a question</p>
-                          <div className="grid grid-cols-4 gap-2">
-                            {questions.map((_, i) => (
-                              <div key={i} className={`aspect-square flex items-center justify-center font-bold text-sm rounded cursor-pointer ${i === 0 ? 'bg-rose-500 text-white rounded-tl-lg rounded-br-lg' : 'bg-slate-200 text-slate-700 rounded-tl-lg rounded-br-lg'}`}>
-                                {i + 1}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="p-4 border-t border-slate-200 bg-slate-100">
-                          <button className="w-full py-3 bg-blue-500 text-white font-bold text-sm rounded hover:bg-blue-600 shadow-sm">Submit</button>
-                        </div>
+                      <div className="w-[320px] bg-slate-50 flex flex-col shrink-0">
+                        <div className="bg-blue-600 text-white font-bold text-sm px-4 py-2 shadow-sm z-10">Physics</div>
                       </div>
                     </div>
                   </div>
@@ -388,27 +395,31 @@ export default function ExamEngine() {
 
               {/* STEP 5: Final Review & Publish */}
               {wizardStep === 5 && (
-                <div className="animate-in slide-in-from-right-8 fade-in duration-500 py-10 flex flex-col items-center text-center">
-                  <div className="h-24 w-24 bg-emerald-50 rounded-full flex items-center justify-center mb-6 border-4 border-white shadow-xl shadow-emerald-500/20">
-                    <Send className="h-10 w-10 text-emerald-500 ml-1" />
-                  </div>
-                  <h2 className="text-4xl font-black text-slate-900 tracking-tight mb-2">Ready to Deploy</h2>
-                  <p className="text-slate-500 font-medium max-w-md mx-auto mb-10">
-                    You are about to publish <strong className="text-slate-800">{basicDetails.title || "this exam"}</strong> to the Student Portal.
-                  </p>
-                  
-                  <div className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm w-full max-w-md text-left space-y-4">
-                    <div className="flex justify-between items-center border-b border-slate-100 pb-4">
-                      <span className="text-xs font-black uppercase tracking-widest text-slate-400">Total Questions</span>
-                      <span className="font-black text-slate-900">{questions.length}</span>
+                <div className="animate-in fade-in duration-300 py-10 flex flex-col items-center">
+                  <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm w-full max-w-lg">
+                    <div className="text-center mb-8">
+                      <div className="h-16 w-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+                      </div>
+                      <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-1">Ready to Deploy</h2>
+                      <p className="text-slate-500 text-sm">Review your settings before making it live.</p>
                     </div>
-                    <div className="flex justify-between items-center border-b border-slate-100 pb-4">
-                      <span className="text-xs font-black uppercase tracking-widest text-slate-400">Duration</span>
-                      <span className="font-black text-slate-900">{examConfig.duration} Mins</span>
+                    
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                        <span className="text-xs font-bold text-slate-500">Examination</span>
+                        <span className="font-bold text-slate-900 text-sm">{basicDetails.title || "Untitled"}</span>
+                      </div>
+                      <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                        <span className="text-xs font-bold text-slate-500">Target Audience</span>
+                        <span className="font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded text-xs">{basicDetails.targetBatch}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-black uppercase tracking-widest text-slate-400">Target Batch</span>
-                      <span className="font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg text-xs">{basicDetails.targetBatch}</span>
+
+                    <div className="mt-8">
+                      <button onClick={executePublish} disabled={isPublishing} className="w-full py-3 bg-indigo-600 text-white rounded-md font-bold text-sm hover:bg-indigo-700 transition-all active:scale-95 shadow-md flex justify-center items-center gap-2">
+                        {isPublishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Deploy to Student Portal
+                      </button>
                     </div>
                   </div>
                 </div>
