@@ -1,246 +1,290 @@
 "use client";
 
 import { useState } from "react";
-import { publishExamAction } from "./actions"; // <--- Add this import!
+import { publishExamAction } from "./actions";
 import { 
-  Trophy, Target, AlertTriangle, Send, Search, Plus, FileText, 
-  BarChart3, BrainCircuit, CheckCircle2, Loader2, MonitorSmartphone, 
-  Settings, UploadCloud, Copy, LayoutList, Eye
+  Plus, CheckCircle2, Loader2, LayoutDashboard, 
+  Settings, MonitorSmartphone, Target, Clock, ShieldCheck, 
+  Send, ChevronRight, FileText, Activity, AlertTriangle
 } from "lucide-react";
-// import { publishExamAction } from "@/app/actions/examActions"; // Uncomment this when running
+
+type ViewState = 'dashboard' | 'wizard';
+type WizardStep = 1 | 2 | 3 | 4 | 5;
 
 export default function ExamEngine() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'studio' | 'analytics'>('overview');
-
-  // --- STUDIO STATES ---
-  const [creationMode, setCreationMode] = useState<'cbt' | 'pdf' | null>(null);
+  const [view, setView] = useState<ViewState>('dashboard');
+  const [wizardStep, setWizardStep] = useState<WizardStep>(1);
   const [isPublishing, setIsPublishing] = useState(false);
 
-  // Digital CBT State
+  // --- CENTRALIZED FORM STATE ---
+  const [basicDetails, setBasicDetails] = useState({
+    title: "",
+    targetBatch: "Target JEE 2027",
+    examType: "cbt"
+  });
+
+  const [examConfig, setExamConfig] = useState({
+    duration: 180,
+    maxMarks: 300,
+    shuffleQuestions: true,
+    antiTabSwitch: true
+  });
+
   const [questions, setQuestions] = useState([
     { id: 1, q_text: "", opt_a: "", opt_b: "", opt_c: "", opt_d: "", correct: "A" }
   ]);
 
-  // PDF Watermark State
-  const [watermarkConfig, setWatermarkConfig] = useState({
-    text: "FUTURE Q ACADEMY", // Using your tech agency name as default!
-    address: "DPS Bokaro Sector 4",
-    opacity: 30
-  });
+  // --- ACTION HANDLER ---
+  const executePublish = async () => {
+    if (!basicDetails.title) {
+      alert("Please provide an Exam Title in Step 1.");
+      setWizardStep(1);
+      return;
+    }
 
-  // --- MOCK ANALYTICS DATA ---
-  const studentResults = [
-    { id: "1", rank: 1, name: "Rahul Kumar", roll: "BOK-001", score: 265, percentile: 99.8, parentPhone: "9988776655", trend: "up" },
-    { id: "2", rank: 2, name: "Priya Singh", roll: "BOK-002", score: 242, percentile: 97.5, parentPhone: "8877665544", trend: "up" },
-    { id: "3", rank: 18, name: "Neha Gupta", roll: "BOK-004", score: 145, percentile: 72.0, parentPhone: "6655443322", trend: "same" },
-    { id: "4", rank: 42, name: "Amit Sharma", roll: "BOK-003", score: 68, percentile: 34.5, parentPhone: "7766554433", trend: "down" },
-  ];
-
-  // --- HANDLERS ---
-  const handleAddQuestion = () => {
-    setQuestions([...questions, { id: Date.now(), q_text: "", opt_a: "", opt_b: "", opt_c: "", opt_d: "", correct: "A" }]);
-  };
-
-  const handlePublish = async (e: React.FormEvent) => {
-    e.preventDefault();
     setIsPublishing(true);
     
-    // Simulate Server Action Delay
-    setTimeout(() => {
-      setIsPublishing(false);
-      setActiveTab('overview');
-      setCreationMode(null);
-      alert("Successfully encrypted and published to Student Portals!");
-    }, 2000);
+    try {
+      const formData = new FormData();
+      formData.append("title", basicDetails.title);
+      formData.append("batch_target", basicDetails.targetBatch);
+      formData.append("duration", examConfig.duration.toString());
+      formData.append("exam_type", basicDetails.examType);
+      formData.append("questions_data", JSON.stringify(questions));
+      formData.append("config_data", JSON.stringify(examConfig));
 
-    /* 
-    REAL SUBMISSION CODE:
-    const formData = new FormData(e.currentTarget as HTMLFormElement);
-    formData.append("exam_type", creationMode || "cbt");
-    formData.append("questions_data", JSON.stringify(questions));
-    await publishExamAction(formData);
-    */
+      const res = await publishExamAction(formData);
+
+      if (res?.error) {
+        alert(res.error);
+        return;
+      }
+
+      // Reset & Return to Dashboard
+      setView('dashboard');
+      setWizardStep(1);
+      setBasicDetails({ title: "", targetBatch: "Target JEE 2027", examType: "cbt" });
+      setQuestions([{ id: 1, q_text: "", opt_a: "", opt_b: "", opt_c: "", opt_d: "", correct: "A" }]);
+      alert("Exam successfully deployed!");
+      
+    } catch (error) {
+      alert("Network or Server error. Please try again.");
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
-  return (
-    <div className="p-4 md:p-8 max-w-[1400px] mx-auto w-full pb-24 min-h-screen flex flex-col">
-      
-      {/* GLOBAL HEADER & NAVIGATION */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 shrink-0">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900">Exam Engine</h1>
-          <p className="text-sm text-slate-500 mt-1 font-medium">Create DPPs, NTA Mock Tests, and track granular performance.</p>
-        </div>
-
-        {/* Core Navigation Tabs */}
-        <div className="flex bg-slate-200/60 p-1.5 rounded-2xl w-full md:w-auto shadow-inner border border-slate-200/50">
-          {(['overview', 'studio', 'analytics'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => { setActiveTab(tab); if(tab !== 'studio') setCreationMode(null); }}
-              className={`flex-1 md:flex-none px-6 py-2.5 text-sm font-bold rounded-xl transition-all capitalize ${
-                activeTab === tab ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              {tab === 'studio' ? 'Creation Studio' : tab}
-            </button>
+  // --- SUB-COMPONENTS ---
+  const WizardHeader = () => (
+    <div className="bg-white border-b border-slate-200 px-8 py-4 sticky top-0 z-50 flex items-center justify-between shadow-sm">
+      <div className="flex items-center gap-6">
+        <button onClick={() => setView('dashboard')} className="text-sm font-black text-slate-400 hover:text-rose-600 transition-colors">
+          Exit Studio
+        </button>
+        <div className="flex items-center gap-2">
+          {[1, 2, 3, 4, 5].map((s) => (
+            <div key={s} className="flex items-center gap-2">
+              <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-black transition-colors ${
+                wizardStep === s ? 'bg-indigo-600 text-white shadow-md' : 
+                wizardStep > s ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'
+              }`}>
+                {wizardStep > s ? <CheckCircle2 className="h-4 w-4" /> : s}
+              </div>
+              {s < 5 && <div className={`h-1 w-8 rounded-full ${wizardStep > s ? 'bg-emerald-500' : 'bg-slate-100'}`}></div>}
+            </div>
           ))}
         </div>
       </div>
+      
+      <div className="flex items-center gap-4">
+        <button onClick={() => setWizardStep(prev => Math.max(1, prev - 1) as WizardStep)} disabled={wizardStep === 1} className="px-4 py-2 text-sm font-bold text-slate-600 disabled:opacity-30">
+          Previous
+        </button>
+        {wizardStep < 5 ? (
+          <button onClick={() => setWizardStep(prev => Math.min(5, prev + 1) as WizardStep)} className="px-6 py-2.5 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-all active:scale-95 shadow-md">
+            Next Step
+          </button>
+        ) : (
+          <button onClick={executePublish} disabled={isPublishing} className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all active:scale-95 shadow-md shadow-indigo-600/20 flex items-center gap-2">
+            {isPublishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Publish Exam
+          </button>
+        )}
+      </div>
+    </div>
+  );
 
-      {/* ==============================================
-          TAB 1: OVERVIEW (The Analytics & Hero Card)
-      ============================================== */}
-      {activeTab === 'overview' && (
-        <div className="animate-in fade-in duration-500 space-y-8">
-          {/* HERO CARD */}
-          <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-[2.5rem] p-8 md:p-10 shadow-2xl relative overflow-hidden flex flex-col md:flex-row justify-between items-center gap-8 border border-slate-800">
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3"></div>
-            
-            <div className="relative z-10 w-full md:w-auto">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="px-3 py-1.5 bg-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-widest rounded-lg border border-indigo-500/30 backdrop-blur-md flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-indigo-400 animate-pulse"></span> Active Exam
-                </span>
-                <span className="text-xs font-bold text-slate-400">Class 12 - JEE Target</span>
-              </div>
-              <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight mb-2">JEE Full Syllabus 04</h2>
-              <p className="text-sm font-medium text-slate-400">Published 2 days ago • 145 Students Attempted</p>
+  return (
+    <div className="min-h-screen bg-slate-50 flex font-sans selection:bg-indigo-200">
+      
+      {/* SIDEBAR NAVIGATION */}
+      <div className="w-64 bg-slate-900 min-h-screen text-slate-400 flex flex-col shrink-0">
+        <div className="p-6 mb-4">
+          <div className="h-10 w-10 bg-indigo-500 rounded-xl flex items-center justify-center text-white font-black text-xl mb-4 shadow-lg shadow-indigo-500/20">CQ</div>
+          <h2 className="text-xs font-black uppercase tracking-widest text-slate-500">Exam Center</h2>
+        </div>
+        <div className="flex-1 px-4 space-y-1">
+          <button onClick={() => setView('dashboard')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl font-bold text-sm transition-all ${view === 'dashboard' ? 'bg-indigo-500 text-white shadow-md' : 'hover:bg-slate-800 hover:text-slate-200'}`}>
+            <LayoutDashboard className="h-4 w-4" /> Dashboard
+          </button>
+          <button className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl font-bold text-sm hover:bg-slate-800 hover:text-slate-200 transition-all">
+            <Activity className="h-4 w-4" /> Live Monitoring
+          </button>
+        </div>
+      </div>
+      
+      {/* MAIN CONTENT AREA */}
+      {view === 'dashboard' ? (
+        // --- DASHBOARD VIEW ---
+        <div className="p-8 flex-1 overflow-y-auto animate-in fade-in duration-500">
+          <div className="flex justify-between items-start mb-10">
+            <div>
+              <h1 className="text-3xl font-black text-slate-900 tracking-tight">Exam Dashboard</h1>
+              <p className="text-sm font-medium text-slate-500 mt-1">Manage tests, monitor live activity, and review results.</p>
             </div>
-
-            <div className="flex items-center gap-8 relative z-10 bg-black/20 p-6 rounded-[2rem] border border-white/5 backdrop-blur-xl w-full md:w-auto">
-              <div>
-                <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1.5">Avg Score</p>
-                <p className="text-3xl font-black text-white">142<span className="text-lg text-slate-500">/300</span></p>
-              </div>
-              <div className="h-12 w-px bg-white/10"></div>
-              <div>
-                <p className="text-[10px] font-extrabold text-amber-400/80 uppercase tracking-widest mb-1.5">Highest</p>
-                <p className="text-3xl font-black text-amber-400">265</p>
-              </div>
-            </div>
+            <button onClick={() => { setView('wizard'); setWizardStep(1); }} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3.5 rounded-2xl font-black text-sm transition-all active:scale-95 shadow-xl shadow-indigo-600/20">
+              <Plus className="h-5 w-5" /> Create New Examination
+            </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white border border-slate-200 p-8 rounded-[2rem] shadow-sm flex flex-col items-center justify-center text-center hover:border-indigo-200 transition-colors cursor-pointer" onClick={() => {setActiveTab('studio'); setCreationMode('cbt');}}>
-              <MonitorSmartphone className="h-16 w-16 text-indigo-500 mb-4" />
-              <h3 className="text-2xl font-black text-slate-900">Create NTA Digital Test</h3>
-              <p className="text-sm text-slate-500 mt-2 font-medium max-w-sm">Build a fully interactive CBT (Computer Based Test) with automatic grading and analytics.</p>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
+            <div className="bg-white border border-slate-200 rounded-[1.5rem] p-6 shadow-sm">
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Total Exams</p>
+              <h2 className="text-4xl font-black text-slate-900">84</h2>
             </div>
-            <div className="bg-white border border-slate-200 p-8 rounded-[2rem] shadow-sm flex flex-col items-center justify-center text-center hover:border-indigo-200 transition-colors cursor-pointer" onClick={() => {setActiveTab('studio'); setCreationMode('pdf');}}>
-              <FileText className="h-16 w-16 text-indigo-500 mb-4" />
-              <h3 className="text-2xl font-black text-slate-900">Upload Branded DPP</h3>
-              <p className="text-sm text-slate-500 mt-2 font-medium max-w-sm">Upload a PDF practice paper. Our engine will automatically apply your coaching's watermark.</p>
+            <div className="bg-white border border-slate-200 rounded-[1.5rem] p-6 shadow-sm">
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Students Attempted</p>
+              <h2 className="text-4xl font-black text-slate-900">4,281</h2>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-[1.5rem] p-6 shadow-sm">
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Average Score</p>
+              <h2 className="text-4xl font-black text-slate-900">142<span className="text-xl text-slate-400">/300</span></h2>
+            </div>
+            <div className="bg-rose-50 border border-rose-200 rounded-[1.5rem] p-6 shadow-sm">
+              <p className="text-[10px] font-black uppercase tracking-widest text-rose-500 mb-2 flex items-center gap-1"><AlertTriangle className="h-3 w-3"/> Active Alerts</p>
+              <h2 className="text-4xl font-black text-rose-700">2</h2>
             </div>
           </div>
         </div>
-      )}
-
-      {/* ==============================================
-          TAB 2: CREATION STUDIO (The Advanced Form)
-      ============================================== */}
-      {activeTab === 'studio' && (
-        <div className="animate-in slide-in-from-bottom-4 duration-500">
+      ) : (
+        // --- CREATION WIZARD VIEW ---
+        <div className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50">
+          <WizardHeader />
           
-          {/* Mode Selector (If not selected yet) */}
-          {!creationMode && (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="h-24 w-24 bg-indigo-50 rounded-[2rem] flex items-center justify-center mb-6">
-                <LayoutList className="h-12 w-12 text-indigo-500" />
-              </div>
-              <h2 className="text-3xl font-black text-slate-900">Choose Exam Format</h2>
-              <p className="text-slate-500 font-medium mt-2 mb-8">How would you like to deliver this content to your students?</p>
-              <div className="flex gap-4">
-                <button onClick={() => setCreationMode('cbt')} className="px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-sm hover:bg-slate-800 transition-all shadow-xl hover:-translate-y-1">Digital CBT Mode</button>
-                <button onClick={() => setCreationMode('pdf')} className="px-8 py-4 bg-white border border-slate-200 text-slate-900 rounded-2xl font-black text-sm hover:border-indigo-300 transition-all shadow-sm hover:-translate-y-1">PDF Upload Mode</button>
-              </div>
-            </div>
-          )}
-
-          {/* CREATION FORM */}
-          {creationMode && (
-            <form onSubmit={handlePublish} className="space-y-6">
+          <div className="flex-1 overflow-y-auto p-8">
+            <div className="max-w-4xl mx-auto w-full pb-20">
               
-              {/* Common Metadata Card */}
-              <div className="bg-white border border-slate-200 rounded-[2rem] p-6 md:p-8 shadow-sm">
-                <div className="flex items-center gap-3 mb-6">
-                  <Settings className="h-6 w-6 text-indigo-600" />
-                  <h2 className="text-xl font-black text-slate-900">Exam Metadata</h2>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Exam / DPP Title</label>
-                    <input required name="title" type="text" placeholder="e.g. Physics Rotation DPP 01" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Target Batch</label>
-                    <select name="batch_target" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:bg-white focus:border-indigo-500 outline-none transition-all appearance-none">
-                      <option>Class 12 - Target JEE</option>
-                      <option>Class 11 - Foundation</option>
-                      <option>Class 10 - Boards</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Duration (Minutes)</label>
-                    <input required name="duration" type="number" defaultValue={60} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all" />
-                  </div>
-                </div>
-              </div>
+              {/* STEP 1: Basic Details */}
+              {wizardStep === 1 && (
+                <div className="animate-in slide-in-from-right-8 fade-in duration-500 space-y-6">
+                  <h2 className="text-3xl font-black text-slate-900 mb-6">Basic Information</h2>
+                  
+                  <div className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Examination Title</label>
+                      <input type="text" placeholder="e.g. JEE Mains Full Syllabus 04" value={basicDetails.title} onChange={e => setBasicDetails({...basicDetails, title: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg font-bold text-slate-900 focus:bg-white focus:border-indigo-500 outline-none transition-all" />
+                    </div>
 
-              {/* MODE: DIGITAL CBT BUILDER */}
-              {creationMode === 'cbt' && (
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between px-2">
-                    <h2 className="text-xl font-black text-slate-900">Question Builder</h2>
-                    <span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-bold rounded-lg">{questions.length} Questions</span>
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Target Batch</label>
+                        <select value={basicDetails.targetBatch} onChange={e => setBasicDetails({...basicDetails, targetBatch: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 outline-none appearance-none cursor-pointer">
+                          <option>Target JEE 2027</option>
+                          <option>Target NEET 2027</option>
+                          <option>Foundation Class 10</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Exam Mode</label>
+                        <select value={basicDetails.examType} onChange={e => setBasicDetails({...basicDetails, examType: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 outline-none appearance-none cursor-pointer">
+                          <option value="cbt">Digital CBT (Computer Based)</option>
+                          <option value="pdf">PDF Upload Mode</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 2: Configuration */}
+              {wizardStep === 2 && (
+                <div className="animate-in slide-in-from-right-8 fade-in duration-500 space-y-6">
+                  <h2 className="text-3xl font-black text-slate-900 mb-6">Test Configuration</h2>
+                  
+                  <div className="grid grid-cols-2 gap-6 mb-6">
+                    <div className="bg-white border border-slate-200 rounded-[2rem] p-6 shadow-sm flex items-center justify-between">
+                      <div>
+                        <Clock className="h-5 w-5 text-indigo-500 mb-2" />
+                        <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1">Duration (Mins)</p>
+                      </div>
+                      <input type="number" value={examConfig.duration} onChange={e => setExamConfig({...examConfig, duration: parseInt(e.target.value)})} className="w-24 text-right text-3xl font-black text-slate-900 bg-transparent border-b-2 border-slate-200 focus:border-indigo-500 outline-none" />
+                    </div>
+                    <div className="bg-white border border-slate-200 rounded-[2rem] p-6 shadow-sm flex items-center justify-between">
+                      <div>
+                        <Target className="h-5 w-5 text-indigo-500 mb-2" />
+                        <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1">Max Marks</p>
+                      </div>
+                      <input type="number" value={examConfig.maxMarks} onChange={e => setExamConfig({...examConfig, maxMarks: parseInt(e.target.value)})} className="w-24 text-right text-3xl font-black text-slate-900 bg-transparent border-b-2 border-slate-200 focus:border-indigo-500 outline-none" />
+                    </div>
+                  </div>
+
+                  <div className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm">
+                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 mb-6 flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-emerald-500"/> Security & Integrity Controls</h3>
+                    <div className="grid grid-cols-2 gap-y-6 gap-x-4">
+                      {[
+                        { id: 'shuffleQuestions', label: 'Shuffle Questions per student' },
+                        { id: 'antiTabSwitch', label: 'Enable Anti-Tab Switch Warnings' }
+                      ].map(setting => (
+                        <label key={setting.id} className="flex items-center gap-4 cursor-pointer group">
+                          <div className={`w-12 h-7 rounded-full p-1 transition-colors ${examConfig[setting.id as keyof typeof examConfig] ? 'bg-emerald-500' : 'bg-slate-200'}`}>
+                            <div className={`bg-white w-5 h-5 rounded-full shadow-sm transition-transform ${examConfig[setting.id as keyof typeof examConfig] ? 'translate-x-5' : 'translate-x-0'}`}></div>
+                          </div>
+                          <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900">{setting.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 3: Question Builder */}
+              {wizardStep === 3 && (
+                <div className="animate-in slide-in-from-right-8 fade-in duration-500 space-y-8">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-3xl font-black text-slate-900">Question Studio</h2>
+                    <span className="px-4 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-bold border border-indigo-100">{questions.length} Questions Drafted</span>
                   </div>
 
                   {questions.map((q, index) => (
-                    <div key={q.id} className="bg-white border border-slate-200 rounded-[2rem] p-6 md:p-8 shadow-sm group hover:border-indigo-200 transition-colors relative">
-                      <div className="absolute -left-3 -top-3 h-10 w-10 bg-slate-900 text-white font-black rounded-xl flex items-center justify-center shadow-lg">
+                    <div key={q.id} className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm relative group hover:border-indigo-300 transition-colors">
+                      <div className="absolute -left-4 -top-4 h-12 w-12 bg-slate-900 text-white font-black rounded-2xl flex items-center justify-center shadow-lg text-lg">
                         Q{index + 1}
                       </div>
 
-                      {/* Spacious Question Input */}
                       <textarea 
-                        required
-                        placeholder="Type your question here. (e.g. Find the moment of inertia of a solid cylinder...)"
+                        placeholder="Type question statement here..."
                         value={q.q_text}
                         onChange={(e) => {
                           const newQ = [...questions];
                           newQ[index].q_text = e.target.value;
                           setQuestions(newQ);
                         }}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-5 min-h-[120px] font-medium text-slate-800 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all resize-none mb-6" 
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-6 min-h-[140px] text-base font-medium text-slate-900 focus:bg-white focus:border-indigo-500 outline-none transition-all resize-none mb-6" 
                       />
 
-                      {/* Luxurious Options Grid */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {(['A', 'B', 'C', 'D'] as const).map((opt) => (
-                          <div 
-                            key={opt} 
-                            className={`flex items-center border rounded-2xl p-2 transition-all ${
-                              q.correct === opt 
-                                ? 'bg-emerald-50/50 border-emerald-300 ring-4 ring-emerald-50' 
-                                : 'bg-white border-slate-200 focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-50'
-                            }`}
-                          >
+                          <div key={opt} className={`flex items-center border-2 rounded-2xl p-2.5 transition-all ${q.correct === opt ? 'bg-emerald-50/50 border-emerald-400' : 'bg-white border-slate-200 focus-within:border-indigo-400'}`}>
                             <button
-                              type="button"
                               onClick={() => {
                                 const newQ = [...questions];
                                 newQ[index].correct = opt;
                                 setQuestions(newQ);
                               }}
-                              className={`h-10 w-10 shrink-0 rounded-xl flex items-center justify-center font-black mr-3 transition-colors ${
-                                q.correct === opt ? 'bg-emerald-500 text-white shadow-md' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                              }`}
+                              className={`h-10 w-10 shrink-0 rounded-xl flex items-center justify-center font-black mr-3 transition-colors ${q.correct === opt ? 'bg-emerald-500 text-white shadow-md' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
                             >
                               {opt}
                             </button>
                             <input 
-                              required
                               placeholder={`Option ${opt}`}
                               value={q[`opt_${opt.toLowerCase()}` as keyof typeof q] as string}
                               onChange={(e) => {
@@ -248,7 +292,7 @@ export default function ExamEngine() {
                                 (newQ[index] as any)[`opt_${opt.toLowerCase()}`] = e.target.value;
                                 setQuestions(newQ);
                               }}
-                              className="flex-1 outline-none font-bold text-sm text-slate-800 bg-transparent py-2 pr-2"
+                              className="flex-1 outline-none font-bold text-sm text-slate-800 bg-transparent py-2"
                             />
                           </div>
                         ))}
@@ -257,177 +301,123 @@ export default function ExamEngine() {
                   ))}
 
                   <button 
-                    type="button" 
-                    onClick={handleAddQuestion}
-                    className="w-full py-6 border-2 border-dashed border-slate-300 rounded-[2rem] text-slate-500 font-black text-sm hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/50 transition-all flex items-center justify-center gap-2"
+                    onClick={() => setQuestions([...questions, { id: Date.now(), q_text: "", opt_a: "", opt_b: "", opt_c: "", opt_d: "", correct: "A" }])}
+                    className="w-full py-6 border-2 border-dashed border-slate-300 rounded-[2rem] text-slate-500 font-black text-sm hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all flex items-center justify-center gap-2"
                   >
-                    <Plus className="h-5 w-5" /> Add Next Question
+                    <Plus className="h-5 w-5" /> Add New Question
                   </button>
                 </div>
               )}
 
-              {/* MODE: PDF WATERMARK ENGINE */}
-              {creationMode === 'pdf' && (
-                <div className="bg-white border border-slate-200 rounded-[2rem] p-6 md:p-8 shadow-sm">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              {/* STEP 4: NTA Preview */}
+              {wizardStep === 4 && (
+                <div className="animate-in slide-in-from-right-8 fade-in duration-500 space-y-6">
+                  <h2 className="text-3xl font-black text-slate-900 mb-6 text-center">Student Interface Preview</h2>
+                  
+                  {/* Highly Accurate NTA Simulator */}
+                  <div className="w-full max-w-4xl mx-auto bg-white border border-slate-300 shadow-2xl flex flex-col select-none rounded-xl overflow-hidden">
                     
-                    {/* Left: Uploader & Config */}
-                    <div className="space-y-8">
-                      <div>
-                        <h2 className="text-xl font-black text-slate-900 mb-1">Watermark Engine</h2>
-                        <p className="text-sm font-medium text-slate-500">Protect your intellectual property automatically.</p>
+                    {/* Top Bar */}
+                    <div className="bg-[#3b4a54] text-white flex justify-between items-center px-4 py-2.5">
+                      <span className="font-bold text-sm truncate">{basicDetails.title || "Advanced Practice Test"}</span>
+                      <div className="flex items-center gap-4 shrink-0">
+                        <span className="bg-white/10 px-3 py-1 rounded text-xs font-mono">Time Left: {examConfig.duration}:00</span>
+                        <span className="text-sm font-bold hidden sm:block">Student Name</span>
                       </div>
-
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Overlay Text (Institute Name)</label>
-                          <input 
-                            type="text" value={watermarkConfig.text} onChange={e => setWatermarkConfig({...watermarkConfig, text: e.target.value})} 
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:bg-white focus:border-indigo-500 outline-none transition-all" 
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Footer Address</label>
-                          <input 
-                            type="text" value={watermarkConfig.address} onChange={e => setWatermarkConfig({...watermarkConfig, address: e.target.value})} 
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:bg-white focus:border-indigo-500 outline-none transition-all" 
-                          />
-                        </div>
-                      </div>
-
-                      <label className="block border-2 border-dashed border-slate-300 rounded-3xl p-8 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/50 transition-all">
-                        <input type="file" accept="application/pdf" className="hidden" />
-                        <div className="h-12 w-12 mx-auto bg-white shadow-sm rounded-full flex items-center justify-center mb-4 text-indigo-500">
-                          <UploadCloud className="h-6 w-6" />
-                        </div>
-                        <h3 className="text-sm font-black text-slate-900">Upload Raw PDF</h3>
-                        <p className="text-xs font-bold text-slate-500 mt-1">We will apply the watermark dynamically.</p>
-                      </label>
                     </div>
 
-                    {/* Right: Live Preview Engine */}
-                    <div className="bg-slate-100 rounded-[2rem] p-6 flex flex-col items-center justify-center border-2 border-slate-200 overflow-hidden relative">
-                      <div className="absolute top-4 left-4 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                        <Eye className="h-3 w-3" /> Live PDF Preview
-                      </div>
-                      
-                      {/* The Simulated PDF Page */}
-                      <div className="w-full max-w-[300px] aspect-[1/1.4] bg-white shadow-2xl relative flex flex-col p-6 overflow-hidden pointer-events-none mt-4">
+                    <div className="flex border-b border-slate-200">
+                      <div className="px-6 py-2 text-sm text-blue-600 font-bold border-b-2 border-blue-600 bg-blue-50/50">Physics</div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row h-[500px]">
+                      {/* Question Area */}
+                      <div className="flex-1 p-6 overflow-y-auto flex flex-col">
+                        <div className="flex justify-between items-center mb-6 pb-3 border-b border-slate-200">
+                          <span className="font-black text-lg text-slate-800">Question 1</span>
+                          <div className="flex gap-4 text-xs font-bold text-slate-500">
+                            <span>MCQ</span>
+                            <span className="text-emerald-600 text-[10px] border border-emerald-200 px-2 py-0.5 rounded bg-emerald-50">+4</span>
+                            <span className="text-rose-500 text-[10px] border border-rose-200 px-2 py-0.5 rounded bg-rose-50">-1</span>
+                          </div>
+                        </div>
+                        <p className="text-base text-slate-900 font-medium mb-8 whitespace-pre-wrap leading-relaxed">
+                          {questions[0]?.q_text || "Question statement will appear here."}
+                        </p>
                         
-                        {/* Mock PDF Content */}
-                        <div className="w-full h-4 bg-slate-200 rounded mb-4"></div>
-                        <div className="w-3/4 h-3 bg-slate-100 rounded mb-8"></div>
-                        <div className="w-full h-24 bg-slate-50 border border-slate-100 rounded mb-4"></div>
-                        <div className="w-5/6 h-24 bg-slate-50 border border-slate-100 rounded mb-4"></div>
-
-                        {/* THE DYNAMIC WATERMARK */}
-                        <div className="absolute inset-0 flex items-center justify-center z-10">
-                          <span 
-                            className="text-4xl md:text-5xl font-black text-slate-900 whitespace-nowrap -rotate-45 select-none"
-                            style={{ opacity: watermarkConfig.opacity / 100 }}
-                          >
-                            {watermarkConfig.text || "WATERMARK"}
-                          </span>
+                        <div className="space-y-3 mt-auto">
+                          {(['A', 'B', 'C', 'D'] as const).map(opt => (
+                            <div key={opt} className="flex items-center gap-3 p-3 border border-slate-200 rounded bg-slate-50">
+                              <div className="h-4 w-4 rounded-full border border-slate-400 bg-white"></div>
+                              <span className="text-sm font-medium text-slate-700">{questions[0]?.[`opt_${opt.toLowerCase()}` as keyof typeof questions[0]] || `Option ${opt}`}</span>
+                            </div>
+                          ))}
                         </div>
 
-                        {/* Footer Watermark */}
-                        <div className="absolute bottom-4 left-0 w-full text-center z-10" style={{ opacity: (watermarkConfig.opacity / 100) + 0.2 }}>
-                          <span className="text-[8px] font-black text-slate-900 tracking-widest uppercase">
-                            {watermarkConfig.address}
-                          </span>
+                        <div className="mt-8 pt-4 border-t border-slate-200 flex justify-between">
+                          <button className="px-4 py-2 border border-slate-300 text-slate-600 font-bold text-xs rounded bg-white hover:bg-slate-50">Mark for Review & Next</button>
+                          <button className="px-8 py-2 bg-blue-600 text-white font-bold text-xs rounded hover:bg-blue-700">Save & Next</button>
+                        </div>
+                      </div>
+
+                      {/* Palette Side Panel */}
+                      <div className="w-full sm:w-[280px] bg-slate-50 border-l border-slate-200 flex flex-col shrink-0">
+                        <div className="p-4 grid grid-cols-2 gap-y-3 gap-x-2 text-[11px] font-bold text-slate-600 border-b border-slate-200 bg-white">
+                          <div className="flex items-center gap-2"><div className="w-6 h-6 bg-emerald-500 text-white flex items-center justify-center rounded-tl-md rounded-br-md">1</div> Answered</div>
+                          <div className="flex items-center gap-2"><div className="w-6 h-6 bg-rose-500 text-white flex items-center justify-center rounded-tl-md rounded-br-md">2</div> Not Answered</div>
+                        </div>
+                        <div className="bg-blue-500 text-white font-bold text-sm p-2 text-center shadow-sm">Physics</div>
+                        <div className="p-4 flex-1 overflow-y-auto">
+                          <p className="text-xs font-bold text-slate-500 mb-3">Choose a question</p>
+                          <div className="grid grid-cols-4 gap-2">
+                            {questions.map((_, i) => (
+                              <div key={i} className={`aspect-square flex items-center justify-center font-bold text-sm rounded cursor-pointer ${i === 0 ? 'bg-rose-500 text-white rounded-tl-lg rounded-br-lg' : 'bg-slate-200 text-slate-700 rounded-tl-lg rounded-br-lg'}`}>
+                                {i + 1}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="p-4 border-t border-slate-200 bg-slate-100">
+                          <button className="w-full py-3 bg-blue-500 text-white font-bold text-sm rounded hover:bg-blue-600 shadow-sm">Submit</button>
                         </div>
                       </div>
                     </div>
-
                   </div>
                 </div>
               )}
 
-              {/* Publish Action Bar */}
-              <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-xl p-2 rounded-2xl shadow-2xl border border-white/10 flex items-center gap-4 z-50">
-                <button type="button" onClick={() => setCreationMode(null)} className="px-6 py-3 text-white/70 hover:text-white font-bold text-sm transition-colors">
-                  Cancel
-                </button>
-                <button 
-                  type="submit" 
-                  disabled={isPublishing}
-                  className="px-8 py-3 bg-indigo-500 hover:bg-indigo-400 text-white rounded-xl font-black text-sm transition-all shadow-lg shadow-indigo-500/25 flex items-center gap-2 disabled:opacity-50"
-                >
-                  {isPublishing ? <><Loader2 className="h-4 w-4 animate-spin"/> Encrypting & Publishing...</> : <><Send className="h-4 w-4"/> Publish to Student Portal</>}
-                </button>
-              </div>
+              {/* STEP 5: Final Review & Publish */}
+              {wizardStep === 5 && (
+                <div className="animate-in slide-in-from-right-8 fade-in duration-500 py-10 flex flex-col items-center text-center">
+                  <div className="h-24 w-24 bg-emerald-50 rounded-full flex items-center justify-center mb-6 border-4 border-white shadow-xl shadow-emerald-500/20">
+                    <Send className="h-10 w-10 text-emerald-500 ml-1" />
+                  </div>
+                  <h2 className="text-4xl font-black text-slate-900 tracking-tight mb-2">Ready to Deploy</h2>
+                  <p className="text-slate-500 font-medium max-w-md mx-auto mb-10">
+                    You are about to publish <strong className="text-slate-800">{basicDetails.title || "this exam"}</strong> to the Student Portal.
+                  </p>
+                  
+                  <div className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm w-full max-w-md text-left space-y-4">
+                    <div className="flex justify-between items-center border-b border-slate-100 pb-4">
+                      <span className="text-xs font-black uppercase tracking-widest text-slate-400">Total Questions</span>
+                      <span className="font-black text-slate-900">{questions.length}</span>
+                    </div>
+                    <div className="flex justify-between items-center border-b border-slate-100 pb-4">
+                      <span className="text-xs font-black uppercase tracking-widest text-slate-400">Duration</span>
+                      <span className="font-black text-slate-900">{examConfig.duration} Mins</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-black uppercase tracking-widest text-slate-400">Target Batch</span>
+                      <span className="font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg text-xs">{basicDetails.targetBatch}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-            </form>
-          )}
-        </div>
-      )}
-
-      {/* ==============================================
-          TAB 3: ANALYTICS & RESULTS
-      ============================================== */}
-      {activeTab === 'analytics' && (
-        <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-6">
-          <div className="bg-white border border-slate-200 rounded-[2rem] shadow-sm overflow-hidden flex flex-col relative">
-            
-            <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-50/50">
-              <div>
-                <h2 className="text-xl font-black text-slate-900">Student Performance Ledger</h2>
-                <p className="text-xs font-bold text-slate-500 mt-1">Track individual growth across the latest tests.</p>
-              </div>
-              <div className="flex items-center gap-3 bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-sm w-full md:w-64">
-                <Search className="h-4 w-4 text-slate-400" />
-                <input type="text" placeholder="Search roll number..." className="bg-transparent border-none outline-none text-sm font-medium w-full" />
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/50 border-b border-slate-100">
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Rank</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Student</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Raw Score</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Percentile</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Analytics</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {studentResults.map((student) => (
-                    <tr key={student.id} className="hover:bg-slate-50/80 transition-colors group">
-                      <td className="px-6 py-4">
-                        <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-black ${
-                          student.rank === 1 ? 'bg-amber-100 text-amber-700 border border-amber-200' :
-                          student.rank === 2 ? 'bg-slate-200 text-slate-700 border border-slate-300' : 'bg-slate-100 text-slate-600'
-                        }`}>
-                          #{student.rank}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="text-sm font-bold text-slate-900">{student.name}</p>
-                        <p className="text-xs text-slate-500 font-medium">{student.roll}</p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`text-sm font-black ${student.score < 100 ? 'text-red-600' : 'text-slate-900'}`}>{student.score}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-slate-100 text-xs font-bold text-slate-700">
-                          {student.percentile} %ile
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 font-bold text-xs rounded-xl transition-all">
-                          <BarChart3 className="h-4 w-4" /> Deep Dive
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }
